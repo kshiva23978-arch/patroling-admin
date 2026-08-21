@@ -22,7 +22,7 @@ function loadGoogleMaps(): Promise<void> {
   loaderPromise = new Promise((resolve, reject) => {
     window.__patrolMapsCallback = () => resolve();
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&callback=__patrolMapsCallback`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&loading=async&callback=__patrolMapsCallback`;
     script.async = true;
     script.onerror = () => reject(new Error("Failed to load Google Maps."));
     document.head.appendChild(script);
