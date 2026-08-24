@@ -7,6 +7,7 @@ import { cumulativeDistancesKm } from "@/lib/geo";
 import { cardClass } from "@/lib/ui-classes";
 import { patrolStatusBadgeClass, patrolStatusLabel } from "@/lib/patrol-status";
 import { fetchPatrollingAction, fetchRoutePointsAction } from "./actions";
+import { PatrolDetails } from "./PatrolDetails";
 import type { Patrolling, PatrolRoutePoint } from "@/lib/resources/patrollings";
 
 const ROUTE_POLL_MS = 10_000;
@@ -114,6 +115,8 @@ export function PatrolTrackingClient({
             : "This patrol has ended — showing its final trail."}
         </p>
       )}
+
+      <PatrolDetails entry={entry} points={points} />
     </div>
   );
 }

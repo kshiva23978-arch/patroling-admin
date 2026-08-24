@@ -20,6 +20,10 @@ export interface PatrolVehicleRef {
   type: string;
   registration_no: string | null;
   is_current: boolean;
+  start_odometer: number | null;
+  end_odometer: number | null;
+  /** Odometer-based distance (end - start) for this vehicle, in km. */
+  distance: number | null;
 }
 
 export interface PatrolMediaRef {
@@ -55,6 +59,14 @@ export interface PatrolIncidentRef {
   reported_at: string | null;
 }
 
+/** One filled-in custom field answer — see RangeCustomFieldController/PatrolEntryCustomFieldValue. */
+export interface PatrolCustomFieldValueRef {
+  custom_field_id: string;
+  field_name: string | null;
+  input_type: "text" | "boolean" | "dropdown" | "time" | "date" | "number" | null;
+  value: string | null;
+}
+
 /** Shape returned by `/admin/patrol-entries` — see AdminPatrolEntryResource. */
 export interface Patrolling {
   id: string;
@@ -69,6 +81,10 @@ export interface Patrolling {
   patrol_leader: PatrolLeaderRef | null;
   modes: PatrolRefShape[];
   vehicles: PatrolVehicleRef[];
+  area_covered: string | null;
+  area_patrolled: string | null;
+  remarks: string | null;
+  staff_deployed_count: number;
   staff_names: string[];
   incharge_staff: string | null;
   current_travel_mode: "walking" | "vehicle" | null;
@@ -80,6 +96,7 @@ export interface Patrolling {
   case_registered: boolean;
   case_reports: PatrolCaseRef[];
   incidents: PatrolIncidentRef[];
+  custom_field_values: PatrolCustomFieldValueRef[];
   started_at: string | null;
   ended_at: string | null;
   created_at: string | null;
@@ -124,6 +141,12 @@ function normalizePatrolling(entry: Patrolling): Patrolling {
     start_location: normalizeLocation(entry.start_location),
     end_location: normalizeLocation(entry.end_location),
     total_distance: toNumberOrNull(entry.total_distance),
+    vehicles: entry.vehicles.map((v) => ({
+      ...v,
+      start_odometer: toNumberOrNull(v.start_odometer),
+      end_odometer: toNumberOrNull(v.end_odometer),
+      distance: toNumberOrNull(v.distance),
+    })),
     case_reports: entry.case_reports.map((c) => ({ ...c, location: normalizeLocation(c.location) })),
     incidents: entry.incidents.map((i) => ({ ...i, location: normalizeLocation(i.location) })),
   };

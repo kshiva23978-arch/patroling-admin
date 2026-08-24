@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   // so the browser falls back to a native GET submit with the password in
   // the URL. Add this machine's LAN IP so dev-mode access from other
   // devices works.
-  allowedDevOrigins: ["192.168.1.34"],
+  allowedDevOrigins: ["192.168.1.40"],
 };
 
 export default nextConfig;
