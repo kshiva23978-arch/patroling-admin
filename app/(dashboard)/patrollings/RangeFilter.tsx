@@ -9,10 +9,12 @@ export function RangeFilter({
   ranges,
   currentRangeId,
   currentStatus,
+  currentType,
 }: {
   ranges: Range[];
   currentRangeId?: string;
   currentStatus?: string;
+  currentType?: string;
 }) {
   const router = useRouter();
 
@@ -21,6 +23,7 @@ export function RangeFilter({
       value={currentRangeId ?? ""}
       onChange={(e) => {
         const params = new URLSearchParams();
+        if (currentType) params.set("type", currentType);
         if (currentStatus) params.set("status", currentStatus);
         if (e.target.value) params.set("range", e.target.value);
         const query = params.toString();

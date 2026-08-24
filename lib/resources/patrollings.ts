@@ -160,6 +160,39 @@ function normalizeRoutePoint(point: PatrolRoutePoint): PatrolRoutePoint {
   };
 }
 
+export type ActivityType = "patrolling" | "case";
+
+/**
+ * One flattened row from `/admin/patrol-entries?type=case|all` — a patrol
+ * entry or a case report, tagged by `type`. `entry_id` is the owning patrol
+ * entry either way, so every row links to the same `/patrollings/{entry_id}`
+ * detail page (a case's own detail lives inside its patrol's page).
+ */
+export interface ActivityRow {
+  id: string;
+  type: ActivityType;
+  entry_id: string;
+  reference: string;
+  status: string;
+  range_name: string | null;
+  beat_name: string | null;
+  leader_employee_id: string | null;
+  leader_name: string | null;
+  date: string | null;
+}
+
+export async function listActivity(
+  page = 1,
+  type: "case" | "all",
+  status?: PatrolStatus,
+  rangeId?: string,
+): Promise<Paginated<ActivityRow>> {
+  const params = new URLSearchParams({ page: String(page), type });
+  if (status) params.set("status", status);
+  if (rangeId) params.set("range_id", rangeId);
+  return apiFetchPaginated<ActivityRow>(`/admin/patrol-entries?${params.toString()}`);
+}
+
 export async function listPatrollings(
   page = 1,
   status?: PatrolStatus,
