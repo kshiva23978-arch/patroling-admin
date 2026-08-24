@@ -40,6 +40,20 @@ function markerKindFor(point: PatrolRoutePoint): MarkerKind {
   return "unknown";
 }
 
+/** Directions API travel mode for snapping this point's segment to roads, or
+ * null if there's no road network to snap to (boat travels open water; an
+ * unset mode has no vehicle to route for). */
+function directionsModeFor(point: PatrolRoutePoint): google.maps.TravelMode | null {
+  switch (markerKindFor(point)) {
+    case "walking":
+      return google.maps.TravelMode.WALKING;
+    case "car":
+      return google.maps.TravelMode.DRIVING;
+    default:
+      return null;
+  }
+}
+
 function modeLabelFor(point: PatrolRoutePoint): string {
   switch (markerKindFor(point)) {
     case "walking":
@@ -218,13 +232,105 @@ export interface PatrolStats {
   casesCount: number;
 }
 
+type ModeGroup = { mode: google.maps.TravelMode | null; points: PatrolRoutePoint[] };
+
+/** Splits the trail into runs of consecutive points sharing the same
+ * directions mode, so each run can be snapped to roads as one path. */
+function groupByMode(points: PatrolRoutePoint[]): ModeGroup[] {
+  const groups: ModeGroup[] = [];
+  for (const point of points) {
+    const mode = directionsModeFor(point);
+    const current = groups.at(-1);
+    if (current && current.mode === mode) {
+      current.points.push(point);
+    } else {
+      groups.push({ mode, points: [point] });
+    }
+  }
+  return groups;
+}
+
+// Directions API allows at most 25 stops (origin + destination + 23
+// waypoints) per request; longer runs are split into overlapping chunks so
+// consecutive requests share a junction point and the result stays continuous.
+const MAX_STOPS_PER_REQUEST = 25;
+
+async function snapRunToRoads(
+  points: PatrolRoutePoint[],
+  mode: google.maps.TravelMode,
+  directionsService: google.maps.DirectionsService,
+): Promise<google.maps.LatLngLiteral[]> {
+  const path: google.maps.LatLngLiteral[] = [];
+
+  for (let start = 0; start < points.length - 1; start += MAX_STOPS_PER_REQUEST - 1) {
+    const chunk = points.slice(start, start + MAX_STOPS_PER_REQUEST);
+    const origin = { lat: chunk[0].latitude, lng: chunk[0].longitude };
+    const destination = { lat: chunk.at(-1)!.latitude, lng: chunk.at(-1)!.longitude };
+    const waypoints = chunk
+      .slice(1, -1)
+      .map((p) => ({ location: { lat: p.latitude, lng: p.longitude }, stopover: false }));
+
+    let chunkPath: google.maps.LatLngLiteral[];
+    try {
+      const result = await directionsService.route({ origin, destination, waypoints, travelMode: mode });
+      chunkPath = (result.routes[0]?.overview_path ?? []).map((ll) => ({ lat: ll.lat(), lng: ll.lng() }));
+      if (chunkPath.length === 0) throw new Error("No route returned.");
+    } catch {
+      // No road connects these points (or the request failed) — fall back to
+      // a straight line through them rather than dropping the segment.
+      chunkPath = chunk.map((p) => ({ lat: p.latitude, lng: p.longitude }));
+    }
+
+    path.push(...(path.length > 0 ? chunkPath.slice(1) : chunkPath));
+  }
+
+  return path;
+}
+
 /**
- * Renders a patrol's GPS trail as a polyline with one marker per recorded
- * point — the marker's glyph reflects how the ranger was traveling at that
- * point (walking/4-wheeler/boat), and the most recent point is highlighted
- * as the current position. Hovering any point shows a card with that
- * point's travel mode/time plus the patrol's overall stats (persons,
- * distance covered so far, incidents, cases).
+ * Builds the map path by snapping each walking/driving run of the trail to
+ * roads via the Directions API and leaving boat/mode-unset runs (and any
+ * run a snap request fails for) as straight lines between the raw points.
+ * `cache` holds resolved runs keyed by their position in the trail so that,
+ * as new points arrive, only the still-growing final run is re-requested —
+ * closed runs earlier in the trail are never re-fetched.
+ */
+async function buildSnappedPath(
+  points: PatrolRoutePoint[],
+  directionsService: google.maps.DirectionsService,
+  cache: Map<string, google.maps.LatLngLiteral[]>,
+): Promise<google.maps.LatLngLiteral[]> {
+  const groups = groupByMode(points);
+  const path: google.maps.LatLngLiteral[] = [];
+  let index = 0;
+
+  for (const group of groups) {
+    const key = `${group.mode ?? "line"}:${index}:${group.points.length}`;
+    index += group.points.length;
+
+    let segment = cache.get(key);
+    if (!segment) {
+      segment =
+        group.mode && group.points.length >= 2
+          ? await snapRunToRoads(group.points, group.mode, directionsService)
+          : group.points.map((p) => ({ lat: p.latitude, lng: p.longitude }));
+      if (group !== groups.at(-1)) cache.set(key, segment);
+    }
+    path.push(...segment);
+  }
+
+  return path;
+}
+
+/**
+ * Renders a patrol's GPS trail as a road-snapped polyline (walking/driving
+ * runs are routed via the Directions API; boat runs have no road network, so
+ * they stay a straight line) with one marker per recorded point — the
+ * marker's glyph reflects how the ranger was traveling at that point
+ * (walking/4-wheeler/boat), and the most recent point is highlighted as the
+ * current position. Hovering any point shows a card with that point's travel
+ * mode/time plus the patrol's overall stats (persons, distance covered so
+ * far, incidents, cases).
  *
  * Incidents and cases are plotted as flags (yellow/red) wherever they carry
  * a location — click one to see its full details, including photos.
@@ -243,6 +349,8 @@ export function LiveMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const polylineRef = useRef<google.maps.Polyline | null>(null);
+  const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
+  const snappedSegmentCacheRef = useRef<Map<string, google.maps.LatLngLiteral[]>>(new Map());
   const markersRef = useRef<google.maps.Marker[]>([]);
   const flagMarkersRef = useRef<google.maps.Marker[]>([]);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
@@ -278,6 +386,7 @@ export function LiveMap({
           strokeWeight: 4,
         });
         infoWindowRef.current = new google.maps.InfoWindow();
+        directionsServiceRef.current = new google.maps.DirectionsService();
         setReady(true);
       })
       .catch((err: unknown) => {
@@ -292,11 +401,14 @@ export function LiveMap({
   }, []);
 
   useEffect(() => {
-    if (!ready || !mapRef.current || !polylineRef.current) return;
+    if (!ready || !mapRef.current || !polylineRef.current || !directionsServiceRef.current) return;
 
-    const path = points.map((p) => ({ lat: p.latitude, lng: p.longitude }));
-    polylineRef.current.setPath(path);
-    const distances = cumulativeDistancesKm(path);
+    let cancelled = false;
+    buildSnappedPath(points, directionsServiceRef.current, snappedSegmentCacheRef.current).then((path) => {
+      if (!cancelled) polylineRef.current!.setPath(path);
+    });
+
+    const distances = cumulativeDistancesKm(points.map((p) => ({ lat: p.latitude, lng: p.longitude })));
 
     markersRef.current.forEach((marker) => marker.setMap(null));
     markersRef.current = points.map((point, index) => {
@@ -320,6 +432,10 @@ export function LiveMap({
 
     const last = points.at(-1);
     if (last) mapRef.current.panTo({ lat: last.latitude, lng: last.longitude });
+
+    return () => {
+      cancelled = true;
+    };
   }, [points, ready]);
 
   useEffect(() => {
