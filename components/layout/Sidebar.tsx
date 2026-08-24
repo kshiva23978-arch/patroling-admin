@@ -25,6 +25,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/designations", label: "Designations" },
       { href: "/patrolling-modes", label: "Patrolling Modes" },
       { href: "/patrol-types", label: "Patrol Types" },
+      { href: "/custom-fields", label: "Custom Fields" },
     ],
   },
   {
