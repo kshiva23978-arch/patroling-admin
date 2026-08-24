@@ -1,6 +1,11 @@
 import { cardClass } from "@/lib/ui-classes";
 import { haversineKm } from "@/lib/geo";
-import type { Patrolling, PatrolRoutePoint, PatrolCustomFieldValueRef } from "@/lib/resources/patrollings";
+import type {
+  Patrolling,
+  PatrolRoutePoint,
+  PatrolCustomFieldValueRef,
+  PatrolLeaderRef,
+} from "@/lib/resources/patrollings";
 
 const VEHICLE_TYPE_LABELS: Record<string, string> = {
   "2_wheeler": "2 Wheeler",
@@ -20,6 +25,11 @@ function walkingDistanceKm(points: PatrolRoutePoint[]): number {
     }
   }
   return total;
+}
+
+function createdByLabel(leader: PatrolLeaderRef | null): string {
+  if (!leader) return "—";
+  return leader.name ? `${leader.name} (${leader.employee_id})` : leader.employee_id;
 }
 
 function formatDateTime(value: string | null): string {
@@ -117,6 +127,7 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
     <div className="space-y-4">
       <Section title="Timing & Coverage">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <Field label="Created By" value={createdByLabel(entry.patrol_leader)} />
           <Field label="Date" value={entry.date || "—"} />
           <Field label="Start Time" value={entry.start_time || "—"} />
           <Field label="End Time" value={entry.end_time || "—"} />
@@ -126,6 +137,28 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
           <Field label="Area Covered" value={entry.area_covered || "—"} />
           <Field label="Area Patrolled" value={entry.area_patrolled || "—"} />
         </div>
+      </Section>
+
+      <Section title={`Staff Deployed (${entry.staff_names.length}/${entry.staff_deployed_count})`}>
+        {entry.staff_names.length === 0 ? (
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">No staff named.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {entry.staff_names.map((name) => (
+              <span
+                key={name}
+                className={
+                  name === entry.incharge_staff
+                    ? "inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                    : "inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+                }
+              >
+                {name}
+                {name === entry.incharge_staff && " (In-charge)"}
+              </span>
+            ))}
+          </div>
+        )}
       </Section>
 
       <Section title="Distance by Travel Mode">
