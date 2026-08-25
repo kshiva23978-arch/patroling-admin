@@ -115,7 +115,7 @@ export interface PatrolRoutePoint {
 /**
  * Postgres decimal columns come back from the Laravel API as JSON strings
  * (e.g. `"11.6767400"`), not numbers — coerce them so callers (esp. the
- * Google Maps components) always get real numbers.
+ * map components) always get real numbers.
  */
 function toNumber(value: unknown): number {
   return typeof value === "number" ? value : parseFloat(String(value));

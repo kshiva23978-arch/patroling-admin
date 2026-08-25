@@ -1,35 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { cumulativeDistancesKm } from "@/lib/geo";
 import type { PatrolCaseRef, PatrolIncidentRef, PatrolRoutePoint } from "@/lib/resources/patrollings";
-
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-declare global {
-  interface Window {
-    __patrolMapsCallback?: () => void;
-  }
-}
-
-let loaderPromise: Promise<void> | null = null;
-
-/** Loads the Maps JS API script once and caches the promise across mounts. */
-function loadGoogleMaps(): Promise<void> {
-  if (window.google?.maps) return Promise.resolve();
-  if (loaderPromise) return loaderPromise;
-
-  loaderPromise = new Promise((resolve, reject) => {
-    window.__patrolMapsCallback = () => resolve();
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&loading=async&callback=__patrolMapsCallback`;
-    script.async = true;
-    script.onerror = () => reject(new Error("Failed to load Google Maps."));
-    document.head.appendChild(script);
-  });
-
-  return loaderPromise;
-}
 
 type MarkerKind = "walking" | "car" | "boat" | "unknown";
 
@@ -40,18 +15,127 @@ function markerKindFor(point: PatrolRoutePoint): MarkerKind {
   return "unknown";
 }
 
-/** Directions API travel mode for snapping this point's segment to roads, or
- * null if there's no road network to snap to (boat travels open water; an
- * unset mode has no vehicle to route for). */
-function directionsModeFor(point: PatrolRoutePoint): google.maps.TravelMode | null {
-  switch (markerKindFor(point)) {
-    case "walking":
-      return google.maps.TravelMode.WALKING;
-    case "car":
-      return google.maps.TravelMode.DRIVING;
-    default:
-      return null;
+// --- Road snapping (OSRM) ---------------------------------------------
+//
+// Only vehicle runs are snapped to roads. Walking runs are left as the raw
+// GPS points: rangers patrol on foot through forest/off-trail terrain as
+// often as along any road, and — verified directly against this server —
+// its "foot" profile silently returns the exact same route as "driving"
+// (no separate pedestrian/trail network is actually loaded), so snapping a
+// walking run to it would just misrepresent an off-road patrol as having
+// followed a nearby road. Boat runs have no road network to snap to either.
+//
+// This calls the public OSRM demo server (router.project-osrm.org), free
+// and keyless but rate-limited to 1 request/second and scoped to
+// "reasonable, non-commercial use" — see
+// https://github.com/Project-OSRM/osrm-backend/wiki/Demo-server. The
+// throttle below serializes every request (across every mounted map) to
+// stay under that. For heavier production use, self-host an OSRM instance
+// and point OSRM_BASE_URL at it instead.
+const OSRM_BASE_URL = "https://router.project-osrm.org";
+const OSRM_MIN_INTERVAL_MS = 1100;
+
+let osrmGate: Promise<void> = Promise.resolve();
+
+function throttledFetch(url: string): Promise<Response> {
+  const run = osrmGate.then(() => fetch(url));
+  const wait = () => new Promise<void>((resolve) => setTimeout(resolve, OSRM_MIN_INTERVAL_MS));
+  osrmGate = run.then(wait, wait);
+  return run;
+}
+
+function osrmModeFor(point: PatrolRoutePoint): "driving" | null {
+  return markerKindFor(point) === "car" ? "driving" : null;
+}
+
+type ModeGroup = { mode: "driving" | null; points: PatrolRoutePoint[] };
+
+/** Splits the trail into runs of consecutive points sharing the same
+ * snapping mode, so each run can be snapped to roads as one path. */
+function groupByMode(points: PatrolRoutePoint[]): ModeGroup[] {
+  const groups: ModeGroup[] = [];
+  for (const point of points) {
+    const mode = osrmModeFor(point);
+    const current = groups.at(-1);
+    if (current && current.mode === mode) {
+      current.points.push(point);
+    } else {
+      groups.push({ mode, points: [point] });
+    }
   }
+  return groups;
+}
+
+// Kept well under OSRM's practical limits (and the URL length a GET request
+// can carry), and short enough to stay a light, quick request even on the
+// shared public server; longer runs are split into overlapping chunks so
+// consecutive requests share a junction point and the result stays
+// continuous.
+const MAX_POINTS_PER_REQUEST = 100;
+
+async function snapRunToRoads(
+  points: PatrolRoutePoint[],
+  mode: "driving",
+): Promise<L.LatLngTuple[]> {
+  const path: L.LatLngTuple[] = [];
+
+  for (let start = 0; start < points.length - 1; start += MAX_POINTS_PER_REQUEST - 1) {
+    const chunk = points.slice(start, start + MAX_POINTS_PER_REQUEST);
+    const coordinates = chunk.map((p) => `${p.longitude},${p.latitude}`).join(";");
+
+    let chunkPath: L.LatLngTuple[];
+    try {
+      const response = await throttledFetch(
+        `${OSRM_BASE_URL}/route/v1/${mode}/${coordinates}?overview=full&geometries=geojson`,
+      );
+      const data = await response.json();
+      const coords: [number, number][] | undefined = data?.routes?.[0]?.geometry?.coordinates;
+      if (!coords || coords.length === 0) throw new Error("No route returned.");
+      chunkPath = coords.map(([lng, lat]) => [lat, lng]);
+    } catch {
+      // No road connects these points (or the request failed) — fall back
+      // to a straight line through them rather than dropping the segment.
+      chunkPath = chunk.map((p): L.LatLngTuple => [p.latitude, p.longitude]);
+    }
+
+    path.push(...(path.length > 0 ? chunkPath.slice(1) : chunkPath));
+  }
+
+  return path;
+}
+
+/**
+ * Builds the map path by snapping each vehicle run of the trail to roads via
+ * OSRM and leaving walking/boat/mode-unset runs (and any run a snap request
+ * fails for) as straight lines between the raw points. `cache` holds
+ * resolved runs keyed by their position in the trail so that, as new points
+ * arrive, only the still-growing final run is re-requested — closed runs
+ * earlier in the trail are never re-fetched.
+ */
+async function buildSnappedPath(
+  points: PatrolRoutePoint[],
+  cache: Map<string, L.LatLngTuple[]>,
+): Promise<L.LatLngTuple[]> {
+  const groups = groupByMode(points);
+  const path: L.LatLngTuple[] = [];
+  let index = 0;
+
+  for (const group of groups) {
+    const key = `${group.mode ?? "line"}:${index}:${group.points.length}`;
+    index += group.points.length;
+
+    let segment = cache.get(key);
+    if (!segment) {
+      segment =
+        group.mode && group.points.length >= 2
+          ? await snapRunToRoads(group.points, group.mode)
+          : group.points.map((p): L.LatLngTuple => [p.latitude, p.longitude]);
+      if (group !== groups.at(-1)) cache.set(key, segment);
+    }
+    path.push(...segment);
+  }
+
+  return path;
 }
 
 function modeLabelFor(point: PatrolRoutePoint): string {
@@ -98,7 +182,16 @@ function glyphMarkup(kind: MarkerKind): string {
   }
 }
 
-function buildMarkerIcon(kind: MarkerKind, highlighted: boolean): google.maps.Icon {
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function buildMarkerIcon(kind: MarkerKind, highlighted: boolean): L.DivIcon {
   const size = highlighted ? 32 : 20;
   const bgColor = highlighted ? "#059669" : "#52525b";
   const ring = highlighted
@@ -110,15 +203,16 @@ function buildMarkerIcon(kind: MarkerKind, highlighted: boolean): google.maps.Ic
     ${glyphMarkup(kind)}
   </svg>`;
 
-  return {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new google.maps.Size(size, size),
-    anchor: new google.maps.Point(size / 2, size / 2),
-  };
+  return L.divIcon({
+    html: svg,
+    className: "",
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
 }
 
 /** A pin-style flag: pole planted at the point, flag pennant near the top. */
-function buildFlagIcon(color: string): google.maps.Icon {
+function buildFlagIcon(color: string): L.DivIcon {
   const size = 30;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}">
     <line x1="5" y1="21" x2="5" y2="3" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
@@ -126,20 +220,12 @@ function buildFlagIcon(color: string): google.maps.Icon {
     <path d="M5 4h14l-4 4 4 4H5z" fill="${color}" stroke="white" stroke-width="1" stroke-linejoin="round"/>
   </svg>`;
 
-  return {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new google.maps.Size(size, size),
-    anchor: new google.maps.Point(6, size - 3),
-  };
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+  return L.divIcon({
+    html: svg,
+    className: "",
+    iconSize: [size, size],
+    iconAnchor: [6, size - 3],
+  });
 }
 
 function formatDateTime(value: string | null): string {
@@ -232,105 +318,17 @@ export interface PatrolStats {
   casesCount: number;
 }
 
-type ModeGroup = { mode: google.maps.TravelMode | null; points: PatrolRoutePoint[] };
-
-/** Splits the trail into runs of consecutive points sharing the same
- * directions mode, so each run can be snapped to roads as one path. */
-function groupByMode(points: PatrolRoutePoint[]): ModeGroup[] {
-  const groups: ModeGroup[] = [];
-  for (const point of points) {
-    const mode = directionsModeFor(point);
-    const current = groups.at(-1);
-    if (current && current.mode === mode) {
-      current.points.push(point);
-    } else {
-      groups.push({ mode, points: [point] });
-    }
-  }
-  return groups;
-}
-
-// Directions API allows at most 25 stops (origin + destination + 23
-// waypoints) per request; longer runs are split into overlapping chunks so
-// consecutive requests share a junction point and the result stays continuous.
-const MAX_STOPS_PER_REQUEST = 25;
-
-async function snapRunToRoads(
-  points: PatrolRoutePoint[],
-  mode: google.maps.TravelMode,
-  directionsService: google.maps.DirectionsService,
-): Promise<google.maps.LatLngLiteral[]> {
-  const path: google.maps.LatLngLiteral[] = [];
-
-  for (let start = 0; start < points.length - 1; start += MAX_STOPS_PER_REQUEST - 1) {
-    const chunk = points.slice(start, start + MAX_STOPS_PER_REQUEST);
-    const origin = { lat: chunk[0].latitude, lng: chunk[0].longitude };
-    const destination = { lat: chunk.at(-1)!.latitude, lng: chunk.at(-1)!.longitude };
-    const waypoints = chunk
-      .slice(1, -1)
-      .map((p) => ({ location: { lat: p.latitude, lng: p.longitude }, stopover: false }));
-
-    let chunkPath: google.maps.LatLngLiteral[];
-    try {
-      const result = await directionsService.route({ origin, destination, waypoints, travelMode: mode });
-      chunkPath = (result.routes[0]?.overview_path ?? []).map((ll) => ({ lat: ll.lat(), lng: ll.lng() }));
-      if (chunkPath.length === 0) throw new Error("No route returned.");
-    } catch {
-      // No road connects these points (or the request failed) — fall back to
-      // a straight line through them rather than dropping the segment.
-      chunkPath = chunk.map((p) => ({ lat: p.latitude, lng: p.longitude }));
-    }
-
-    path.push(...(path.length > 0 ? chunkPath.slice(1) : chunkPath));
-  }
-
-  return path;
-}
+const DEFAULT_CENTER: L.LatLngTuple = [20.5937, 78.9629]; // India, used when there's no GPS trail yet.
 
 /**
- * Builds the map path by snapping each walking/driving run of the trail to
- * roads via the Directions API and leaving boat/mode-unset runs (and any
- * run a snap request fails for) as straight lines between the raw points.
- * `cache` holds resolved runs keyed by their position in the trail so that,
- * as new points arrive, only the still-growing final run is re-requested —
- * closed runs earlier in the trail are never re-fetched.
- */
-async function buildSnappedPath(
-  points: PatrolRoutePoint[],
-  directionsService: google.maps.DirectionsService,
-  cache: Map<string, google.maps.LatLngLiteral[]>,
-): Promise<google.maps.LatLngLiteral[]> {
-  const groups = groupByMode(points);
-  const path: google.maps.LatLngLiteral[] = [];
-  let index = 0;
-
-  for (const group of groups) {
-    const key = `${group.mode ?? "line"}:${index}:${group.points.length}`;
-    index += group.points.length;
-
-    let segment = cache.get(key);
-    if (!segment) {
-      segment =
-        group.mode && group.points.length >= 2
-          ? await snapRunToRoads(group.points, group.mode, directionsService)
-          : group.points.map((p) => ({ lat: p.latitude, lng: p.longitude }));
-      if (group !== groups.at(-1)) cache.set(key, segment);
-    }
-    path.push(...segment);
-  }
-
-  return path;
-}
-
-/**
- * Renders a patrol's GPS trail as a road-snapped polyline (walking/driving
- * runs are routed via the Directions API; boat runs have no road network, so
- * they stay a straight line) with one marker per recorded point — the
- * marker's glyph reflects how the ranger was traveling at that point
- * (walking/4-wheeler/boat), and the most recent point is highlighted as the
- * current position. Hovering any point shows a card with that point's travel
- * mode/time plus the patrol's overall stats (persons, distance covered so
- * far, incidents, cases).
+ * Renders a patrol's GPS trail as a polyline — vehicle runs snapped to roads
+ * via OSRM, walking/boat runs left as the raw recorded points (a ping every
+ * ~30s while the patrol is active) connected in order — with one marker per
+ * point. The marker's glyph reflects how the ranger was traveling at that
+ * point (walking/4-wheeler/boat), and the most recent point is highlighted
+ * as the current position. Hovering any point shows a tooltip with that
+ * point's travel mode/time plus the patrol's overall stats (persons,
+ * distance covered so far, incidents, cases).
  *
  * Incidents and cases are plotted as flags (yellow/red) wherever they carry
  * a location — click one to see its full details, including photos.
@@ -347,91 +345,75 @@ export function LiveMap({
   caseReports: PatrolCaseRef[];
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const polylineRef = useRef<google.maps.Polyline | null>(null);
-  const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
-  const snappedSegmentCacheRef = useRef<Map<string, google.maps.LatLngLiteral[]>>(new Map());
-  const markersRef = useRef<google.maps.Marker[]>([]);
-  const flagMarkersRef = useRef<google.maps.Marker[]>([]);
-  const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const polylineRef = useRef<L.Polyline | null>(null);
+  const snappedSegmentCacheRef = useRef<Map<string, L.LatLngTuple[]>>(new Map());
+  const markersRef = useRef<L.Marker[]>([]);
+  const flagMarkersRef = useRef<L.Marker[]>([]);
   const statsRef = useRef(stats);
   const [ready, setReady] = useState(false);
-  const [error, setError] = useState<string | null>(() =>
-    API_KEY ? null : "Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in admin/.env.local to enable the live-tracking map.",
-  );
 
   useEffect(() => {
     statsRef.current = stats;
   }, [stats]);
 
+  // Mount the map exactly once. Guards against React StrictMode's dev-mode
+  // double-invoke (which would otherwise try to initialize Leaflet twice on
+  // the same DOM node and throw) by tearing the map fully down on cleanup.
   useEffect(() => {
-    if (!API_KEY) return;
+    if (!containerRef.current) return;
 
-    let cancelled = false;
-    loadGoogleMaps()
-      .then(() => {
-        if (cancelled || !containerRef.current) return;
-        const last = points.at(-1);
-        const center = last ? { lat: last.latitude, lng: last.longitude } : { lat: 20.5937, lng: 78.9629 };
+    const last = points.at(-1);
+    const center: L.LatLngTuple = last ? [last.latitude, last.longitude] : DEFAULT_CENTER;
 
-        mapRef.current = new google.maps.Map(containerRef.current, {
-          center,
-          zoom: last ? 15 : 5,
-          mapTypeId: "hybrid",
-        });
-        polylineRef.current = new google.maps.Polyline({
-          map: mapRef.current,
-          path: [],
-          strokeColor: "#15803d",
-          strokeWeight: 4,
-        });
-        infoWindowRef.current = new google.maps.InfoWindow();
-        directionsServiceRef.current = new google.maps.DirectionsService();
-        setReady(true);
-      })
-      .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : "Failed to load Google Maps.");
-      });
+    const map = L.map(containerRef.current).setView(center, last ? 15 : 5);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    polylineRef.current = L.polyline([], { color: "#15803d", weight: 4 }).addTo(map);
+    mapRef.current = map;
+    setReady(true);
 
     return () => {
-      cancelled = true;
+      map.remove();
+      mapRef.current = null;
+      polylineRef.current = null;
+      setReady(false);
     };
-    // Only load once per mount — path/marker updates are handled below.
+    // Only mount once — path/marker updates are handled below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (!ready || !mapRef.current || !polylineRef.current || !directionsServiceRef.current) return;
+    if (!ready || !mapRef.current || !polylineRef.current) return;
 
     let cancelled = false;
-    buildSnappedPath(points, directionsServiceRef.current, snappedSegmentCacheRef.current).then((path) => {
-      if (!cancelled) polylineRef.current!.setPath(path);
+    buildSnappedPath(points, snappedSegmentCacheRef.current).then((path) => {
+      if (!cancelled) polylineRef.current!.setLatLngs(path);
     });
 
     const distances = cumulativeDistancesKm(points.map((p) => ({ lat: p.latitude, lng: p.longitude })));
 
-    markersRef.current.forEach((marker) => marker.setMap(null));
+    markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = points.map((point, index) => {
       const isLast = index === points.length - 1;
-      const marker = new google.maps.Marker({
-        map: mapRef.current!,
-        position: { lat: point.latitude, lng: point.longitude },
+      const marker = L.marker([point.latitude, point.longitude], {
         icon: buildMarkerIcon(markerKindFor(point), isLast),
-        zIndex: isLast ? 999 : index,
-        optimized: true,
-      });
+        zIndexOffset: isLast ? 999 : index,
+      }).addTo(mapRef.current!);
 
-      marker.addListener("mouseover", () => {
-        infoWindowRef.current?.setContent(buildInfoContent(point, distances[index], statsRef.current));
-        infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
+      marker.bindTooltip(buildInfoContent(point, distances[index], statsRef.current), {
+        direction: "top",
+        opacity: 1,
       });
-      marker.addListener("mouseout", () => infoWindowRef.current?.close());
 
       return marker;
     });
 
     const last = points.at(-1);
-    if (last) mapRef.current.panTo({ lat: last.latitude, lng: last.longitude });
+    if (last) mapRef.current.panTo([last.latitude, last.longitude]);
 
     return () => {
       cancelled = true;
@@ -441,23 +423,18 @@ export function LiveMap({
   useEffect(() => {
     if (!ready || !mapRef.current) return;
 
-    flagMarkersRef.current.forEach((marker) => marker.setMap(null));
-    const flagMarkers: google.maps.Marker[] = [];
+    flagMarkersRef.current.forEach((marker) => marker.remove());
+    const flagMarkers: L.Marker[] = [];
 
     incidents.forEach((incident) => {
       const { latitude, longitude } = incident.location;
       if (latitude === null || longitude === null) return;
 
-      const marker = new google.maps.Marker({
-        map: mapRef.current!,
-        position: { lat: latitude, lng: longitude },
+      const marker = L.marker([latitude, longitude], {
         icon: buildFlagIcon("#eab308"),
-        zIndex: 1000,
-      });
-      marker.addListener("click", () => {
-        infoWindowRef.current?.setContent(buildIncidentInfoContent(incident));
-        infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
-      });
+        zIndexOffset: 1000,
+      }).addTo(mapRef.current!);
+      marker.bindPopup(buildIncidentInfoContent(incident));
       flagMarkers.push(marker);
     });
 
@@ -465,35 +442,22 @@ export function LiveMap({
       const { latitude, longitude } = caseReport.location;
       if (latitude === null || longitude === null) return;
 
-      const marker = new google.maps.Marker({
-        map: mapRef.current!,
-        position: { lat: latitude, lng: longitude },
+      const marker = L.marker([latitude, longitude], {
         icon: buildFlagIcon("#dc2626"),
-        zIndex: 1001,
-      });
-      marker.addListener("click", () => {
-        infoWindowRef.current?.setContent(buildCaseInfoContent(caseReport));
-        infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
-      });
+        zIndexOffset: 1001,
+      }).addTo(mapRef.current!);
+      marker.bindPopup(buildCaseInfoContent(caseReport));
       flagMarkers.push(marker);
     });
 
     flagMarkersRef.current = flagMarkers;
   }, [incidents, caseReports, ready]);
 
-  if (error) {
-    return (
-      <div className="flex h-96 items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 px-6 text-center text-sm text-zinc-500">
-        {error}
-      </div>
-    );
-  }
-
   if (points.length === 0) {
     return (
       <div className="relative">
         <div ref={containerRef} className="h-96 w-full rounded-lg border border-zinc-200" />
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-white/70 text-sm text-zinc-500">
+        <div className="pointer-events-none absolute inset-0 z-[1000] flex items-center justify-center rounded-lg bg-white/70 text-sm text-zinc-500">
           No GPS points recorded yet.
         </div>
       </div>
