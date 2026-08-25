@@ -12,7 +12,7 @@ export default async function RangesPage({ searchParams }: { searchParams: Promi
 
   const columns: Column<Range>[] = [
     { header: "Range ID", render: (r) => r.range_id },
-    { header: "Name", render: (r) => <span className="font-medium text-zinc-900 dark:text-zinc-50">{r.range_name}</span> },
+    { header: "Name", render: (r) => <span className="font-medium text-zinc-900">{r.range_name}</span> },
     { header: "Category", render: (r) => r.category || <span className="text-zinc-400">—</span> },
     { header: "Headquarter", render: (r) => r.range_headquarter },
     { header: "Patrolling Modes", render: (r) => r.patrolling_modes.map((m) => m.mode_name).join(", ") || <span className="text-zinc-400">—</span> },
@@ -36,7 +36,7 @@ export default async function RangesPage({ searchParams }: { searchParams: Promi
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Ranges</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">Ranges</h1>
         <Link href="/ranges/new" className={primaryButtonClass}>
           New Range
         </Link>

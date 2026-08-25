@@ -27,7 +27,7 @@ export function Pagination({
 
   return (
     <div className="flex items-center justify-between pt-2">
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="text-sm text-zinc-500">
         Page {meta.current_page} of {meta.last_page} &middot; {meta.total} total
       </p>
       <div className="flex gap-2">

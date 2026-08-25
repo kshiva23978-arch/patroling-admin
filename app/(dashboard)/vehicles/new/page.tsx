@@ -8,7 +8,7 @@ export default async function NewVehiclePage() {
 
   return (
     <div className="max-w-lg space-y-4">
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">New Vehicle</h1>
+      <h1 className="text-xl font-semibold text-zinc-900">New Vehicle</h1>
       <ResourceForm
         schemaKey="vehicleCreateSchema"
         defaultValues={vehicleCreateDefaults}

@@ -34,7 +34,7 @@ export function DashboardFilters({
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div>
-        <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Range</label>
+        <label className="mb-1 block text-xs font-medium text-zinc-600">Range</label>
         <select
           value={rangeId}
           onChange={(e) => {
@@ -52,7 +52,7 @@ export function DashboardFilters({
         </select>
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">From</label>
+        <label className="mb-1 block text-xs font-medium text-zinc-600">From</label>
         <input
           type="date"
           value={from}
@@ -62,7 +62,7 @@ export function DashboardFilters({
         />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">To</label>
+        <label className="mb-1 block text-xs font-medium text-zinc-600">To</label>
         <input
           type="date"
           value={to}

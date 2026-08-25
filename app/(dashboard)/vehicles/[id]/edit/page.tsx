@@ -11,9 +11,9 @@ export default async function EditVehiclePage({ params }: { params: Promise<{ id
 
   return (
     <div className="max-w-lg space-y-4">
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Edit Vehicle</h1>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        Range: <span className="font-medium text-zinc-900 dark:text-zinc-100">{range.range_name}</span> (fixed at creation)
+      <h1 className="text-xl font-semibold text-zinc-900">Edit Vehicle</h1>
+      <p className="text-sm text-zinc-500">
+        Range: <span className="font-medium text-zinc-900">{range.range_name}</span> (fixed at creation)
       </p>
       <ResourceForm
         schemaKey="vehicleUpdateSchema"

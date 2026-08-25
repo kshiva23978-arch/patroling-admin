@@ -13,8 +13,8 @@ import type { ActivityRow, PatrolStatus } from "@/lib/resources/patrollings";
 const POLL_INTERVAL_MS = 15_000;
 
 const TYPE_BADGE_CLASS: Record<ActivityRow["type"], string> = {
-  patrolling: "inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-950 dark:text-blue-300",
-  case: "inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-950 dark:text-red-300",
+  patrolling: "inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800",
+  case: "inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800",
 };
 
 const TYPE_LABEL: Record<ActivityRow["type"], string> = {
@@ -30,8 +30,8 @@ function statusBadge(row: ActivityRow) {
 
   const isOpen = row.status === "open";
   const className = isOpen
-    ? "inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-    : "inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400";
+    ? "inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800"
+    : "inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600";
   return <span className={className}>{isOpen ? "Open" : "Closed"}</span>;
 }
 
@@ -75,7 +75,7 @@ export function ActivityTable({
     },
     {
       header: "Reference",
-      render: (row) => <span className="font-medium text-zinc-900 dark:text-zinc-50">{row.reference}</span>,
+      render: (row) => <span className="font-medium text-zinc-900">{row.reference}</span>,
     },
     {
       header: "Ranger",

@@ -8,7 +8,7 @@ export default async function EditPatrollingModePage({ params }: { params: Promi
 
   return (
     <div className="max-w-lg space-y-4">
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Edit Patrolling Mode</h1>
+      <h1 className="text-xl font-semibold text-zinc-900">Edit Patrolling Mode</h1>
       <ResourceForm
         schemaKey="patrollingModeSchema"
         defaultValues={{ name: mode.mode_name }}

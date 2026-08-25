@@ -51,11 +51,11 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex h-full w-60 shrink-0 flex-col gap-6 overflow-y-auto border-r border-zinc-200 bg-white px-4 py-6 dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="px-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">Patrolling Admin</div>
+    <nav className="flex h-full w-60 shrink-0 flex-col gap-6 overflow-y-auto border-r border-green-950 bg-green-900 px-4 py-6">
+      <div className="px-2 text-base font-semibold text-white">Patrolling Admin</div>
       {NAV_GROUPS.map((group) => (
         <div key={group.title} className="space-y-1">
-          <p className="px-2 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+          <p className="px-2 text-xs font-semibold uppercase tracking-wide text-green-300/70">
             {group.title}
           </p>
           {group.items.map((item) => {
@@ -66,8 +66,8 @@ export function Sidebar() {
                 href={item.href}
                 className={`block rounded-md px-2 py-1.5 text-sm font-medium transition-colors ${
                   active
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                    : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                    ? "bg-green-700 text-white"
+                    : "text-green-100/80 hover:bg-green-800 hover:text-white"
                 }`}
               >
                 {item.label}

@@ -12,7 +12,7 @@ export default async function DesignationsPage({ searchParams }: { searchParams:
 
   const columns: Column<Designation>[] = [
     { header: "Rank", render: (d) => d.rank_order },
-    { header: "Name", render: (d) => <span className="font-medium text-zinc-900 dark:text-zinc-50">{d.designation_name}</span> },
+    { header: "Name", render: (d) => <span className="font-medium text-zinc-900">{d.designation_name}</span> },
     { header: "Description", render: (d) => d.description || <span className="text-zinc-400">—</span> },
     { header: "Status", render: (d) => <span className={badgeClass(d.status)}>{d.status ? "Active" : "Inactive"}</span> },
     {
@@ -35,7 +35,7 @@ export default async function DesignationsPage({ searchParams }: { searchParams:
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Designations</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">Designations</h1>
         <Link href="/designations/new" className={primaryButtonClass}>
           New Designation
         </Link>

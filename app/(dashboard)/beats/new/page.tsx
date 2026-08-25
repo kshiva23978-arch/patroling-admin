@@ -8,7 +8,7 @@ export default async function NewBeatPage() {
 
   return (
     <div className="max-w-lg space-y-4">
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">New Beat</h1>
+      <h1 className="text-xl font-semibold text-zinc-900">New Beat</h1>
       <ResourceForm
         schemaKey="beatCreateSchema"
         defaultValues={beatCreateDefaults}

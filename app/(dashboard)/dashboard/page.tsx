@@ -29,7 +29,7 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Dashboard</h1>
+      <h1 className="text-xl font-semibold text-zinc-900">Dashboard</h1>
 
       <DashboardFilters
         ranges={ranges}
@@ -41,8 +41,8 @@ export default async function DashboardPage({
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {TILES.map((tile) => (
           <div key={tile.key} className={`p-5 ${cardClass}`}>
-            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{tile.label}</p>
-            <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+            <p className="text-xs font-medium text-zinc-500">{tile.label}</p>
+            <p className="mt-2 text-2xl font-semibold text-zinc-900">
               {stats[tile.key]}
             </p>
           </div>

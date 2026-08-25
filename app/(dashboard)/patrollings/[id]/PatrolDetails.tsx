@@ -70,17 +70,17 @@ function CustomFieldValue({ field }: { field: PatrolCustomFieldValueRef }) {
     const { answer, names } = decodeBooleanValue(field.value);
     return (
       <div>
-        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+        <p className="text-sm font-medium text-zinc-900">
           {answer === "yes" ? "Yes" : answer === "no" ? "No" : "—"}
         </p>
         {names.length > 0 && (
-          <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{names.join(", ")}</p>
+          <p className="mt-0.5 text-xs text-zinc-500">{names.join(", ")}</p>
         )}
       </div>
     );
   }
 
-  return <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{field.value || "—"}</p>;
+  return <p className="text-sm font-medium text-zinc-900">{field.value || "—"}</p>;
 }
 
 /** Fullscreen viewer for a photo grid's images — Escape to close, arrow keys
@@ -185,7 +185,7 @@ function PhotoGrid({ ids, baseUrl }: { ids: string[]; baseUrl: string }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   if (ids.length === 0) {
-    return <p className="text-xs text-zinc-400 dark:text-zinc-500">No photos.</p>;
+    return <p className="text-xs text-zinc-400">No photos.</p>;
   }
 
   const urls = ids.map((id) => `${baseUrl}/${id}`);
@@ -199,7 +199,7 @@ function PhotoGrid({ ids, baseUrl }: { ids: string[]; baseUrl: string }) {
           src={urls[index]}
           alt=""
           onClick={() => setOpenIndex(index)}
-          className="h-20 w-20 cursor-pointer rounded-md border border-zinc-200 object-cover transition hover:opacity-80 dark:border-zinc-800"
+          className="h-20 w-20 cursor-pointer rounded-md border border-zinc-200 object-cover transition hover:opacity-80"
         />
       ))}
       {openIndex !== null && (
@@ -212,7 +212,7 @@ function PhotoGrid({ ids, baseUrl }: { ids: string[]; baseUrl: string }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className={`space-y-3 p-4 ${cardClass}`}>
-      <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{title}</h2>
+      <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
       {children}
     </div>
   );
@@ -221,8 +221,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">{label}</p>
-      <div className="mt-0.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">{value}</div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">{label}</p>
+      <div className="mt-0.5 text-sm font-medium text-zinc-900">{value}</div>
     </div>
   );
 }
@@ -251,7 +251,7 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
 
       <Section title={`Staff Deployed (${entry.staff_names.length}/${entry.staff_deployed_count})`}>
         {entry.staff_names.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">No staff named.</p>
+          <p className="text-sm text-zinc-500">No staff named.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {entry.staff_names.map((name) => (
@@ -259,8 +259,8 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
                 key={name}
                 className={
                   name === entry.incharge_staff
-                    ? "inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                    : "inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+                    ? "inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800"
+                    : "inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-700"
                 }
               >
                 {name}
@@ -273,45 +273,45 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
 
       <Section title="Distance by Travel Mode">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
+          <table className="min-w-full divide-y divide-zinc-200 text-sm">
             <thead>
-              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-zinc-400">
                 <th className="py-2 pr-4">Mode / Vehicle</th>
                 <th className="py-2 pr-4">Registration</th>
                 <th className="py-2 pr-4">Odometer</th>
                 <th className="py-2 pr-4">Distance</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody className="divide-y divide-zinc-100">
               {entry.vehicles.map((v) => (
                 <tr key={v.id}>
-                  <td className="py-2 pr-4 font-medium text-zinc-900 dark:text-zinc-50">
+                  <td className="py-2 pr-4 font-medium text-zinc-900">
                     {VEHICLE_TYPE_LABELS[v.type] ?? v.type}
                   </td>
-                  <td className="py-2 pr-4 text-zinc-600 dark:text-zinc-300">{v.registration_no || "—"}</td>
-                  <td className="py-2 pr-4 text-zinc-600 dark:text-zinc-300">
+                  <td className="py-2 pr-4 text-zinc-600">{v.registration_no || "—"}</td>
+                  <td className="py-2 pr-4 text-zinc-600">
                     {v.start_odometer !== null && v.end_odometer !== null
                       ? `${v.start_odometer.toFixed(1)} → ${v.end_odometer.toFixed(1)} km`
                       : "—"}
                   </td>
-                  <td className="py-2 pr-4 font-medium text-zinc-900 dark:text-zinc-50">
+                  <td className="py-2 pr-4 font-medium text-zinc-900">
                     {v.distance !== null ? `${v.distance.toFixed(2)} km` : "—"}
                   </td>
                 </tr>
               ))}
               {walkingKm > 0 && (
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-zinc-900 dark:text-zinc-50">Walking</td>
-                  <td className="py-2 pr-4 text-zinc-600 dark:text-zinc-300">—</td>
-                  <td className="py-2 pr-4 text-zinc-600 dark:text-zinc-300">—</td>
-                  <td className="py-2 pr-4 font-medium text-zinc-900 dark:text-zinc-50">
+                  <td className="py-2 pr-4 font-medium text-zinc-900">Walking</td>
+                  <td className="py-2 pr-4 text-zinc-600">—</td>
+                  <td className="py-2 pr-4 text-zinc-600">—</td>
+                  <td className="py-2 pr-4 font-medium text-zinc-900">
                     {walkingKm.toFixed(2)} km
                   </td>
                 </tr>
               )}
               {entry.vehicles.length === 0 && walkingKm === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-4 text-center text-zinc-400 dark:text-zinc-500">
+                  <td colSpan={4} className="py-4 text-center text-zinc-400">
                     No travel recorded yet.
                   </td>
                 </tr>
@@ -319,11 +319,11 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
             </tbody>
             {(entry.vehicles.length > 0 || walkingKm > 0) && (
               <tfoot>
-                <tr className="border-t border-zinc-200 dark:border-zinc-800">
-                  <td colSpan={3} className="py-2 pr-4 text-right font-semibold text-zinc-900 dark:text-zinc-50">
+                <tr className="border-t border-zinc-200">
+                  <td colSpan={3} className="py-2 pr-4 text-right font-semibold text-zinc-900">
                     Total
                   </td>
-                  <td className="py-2 pr-4 font-semibold text-zinc-900 dark:text-zinc-50">
+                  <td className="py-2 pr-4 font-semibold text-zinc-900">
                     {combinedTotalKm.toFixed(2)} km
                   </td>
                 </tr>
@@ -334,7 +334,7 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
       </Section>
 
       <Section title="Patrol Report">
-        <p className="whitespace-pre-wrap text-sm text-zinc-700 dark:text-zinc-300">
+        <p className="whitespace-pre-wrap text-sm text-zinc-700">
           {entry.remarks || "No report submitted."}
         </p>
       </Section>
@@ -355,22 +355,22 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
 
       <Section title={`Incidents (${entry.incidents.length})`}>
         {entry.incidents.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">No incidents reported.</p>
+          <p className="text-sm text-zinc-500">No incidents reported.</p>
         ) : (
           <div className="space-y-4">
             {entry.incidents.map((incident) => (
               <div
                 key={incident.id}
-                className="space-y-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+                className="space-y-2 rounded-lg border border-zinc-200 p-3"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{incident.name}</p>
-                  <p className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="text-sm font-semibold text-zinc-900">{incident.name}</p>
+                  <p className="shrink-0 text-xs text-zinc-500">
                     {formatDateTime(incident.reported_at)}
                   </p>
                 </div>
-                <p className="text-sm text-zinc-700 dark:text-zinc-300">{incident.details}</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="text-sm text-zinc-700">{incident.details}</p>
+                <p className="text-xs text-zinc-500">
                   {incident.location.address ||
                     (incident.location.latitude !== null
                       ? `${incident.location.latitude.toFixed(5)}, ${incident.location.longitude?.toFixed(5)}`
@@ -385,28 +385,28 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
 
       <Section title={`Case Reports (${entry.case_reports.length})`}>
         {entry.case_reports.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">No cases filed.</p>
+          <p className="text-sm text-zinc-500">No cases filed.</p>
         ) : (
           <div className="space-y-4">
             {entry.case_reports.map((caseReport) => (
               <div
                 key={caseReport.id}
-                className="space-y-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+                className="space-y-2 rounded-lg border border-zinc-200 p-3"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                  <p className="text-sm font-semibold text-zinc-900">
                     {caseReport.case_number}
                     {caseReport.conflict_type && (
-                      <span className="ml-2 font-normal text-zinc-500 dark:text-zinc-400">
+                      <span className="ml-2 font-normal text-zinc-500">
                         {caseReport.conflict_type}
                       </span>
                     )}
                   </p>
-                  <p className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="shrink-0 text-xs text-zinc-500">
                     {formatDateTime(caseReport.reported_at)}
                   </p>
                 </div>
-                <p className="text-sm text-zinc-700 dark:text-zinc-300">{caseReport.details}</p>
+                <p className="text-sm text-zinc-700">{caseReport.details}</p>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <Field
                     label="Rescue Conducted"
@@ -416,7 +416,7 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
                   <Field label="Rehab Details" value={caseReport.rehab_details || "—"} />
                   <Field label="Response Time" value={caseReport.response_time || "—"} />
                 </div>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="text-xs text-zinc-500">
                   {caseReport.location.address ||
                     (caseReport.location.latitude !== null
                       ? `${caseReport.location.latitude.toFixed(5)}, ${caseReport.location.longitude?.toFixed(5)}`

@@ -10,7 +10,7 @@ export default async function EditRangePage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="max-w-lg space-y-4">
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Edit Range</h1>
+      <h1 className="text-xl font-semibold text-zinc-900">Edit Range</h1>
       <ResourceForm
         schemaKey="rangeSchema"
         defaultValues={{

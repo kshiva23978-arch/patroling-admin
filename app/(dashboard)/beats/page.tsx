@@ -17,7 +17,7 @@ export default async function BeatsPage({
   const rangeName = new Map(ranges.map((r) => [r.id, r.range_name]));
 
   const columns: Column<Beat>[] = [
-    { header: "Name", render: (b) => <span className="font-medium text-zinc-900 dark:text-zinc-50">{b.name}</span> },
+    { header: "Name", render: (b) => <span className="font-medium text-zinc-900">{b.name}</span> },
     { header: "Range", render: (b) => rangeName.get(b.range_id) ?? b.range_id },
     { header: "Status", render: (b) => <span className={badgeClass(b.status)}>{b.status ? "Active" : "Inactive"}</span> },
     {
@@ -40,7 +40,7 @@ export default async function BeatsPage({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Beats</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">Beats</h1>
         <Link href="/beats/new" className={primaryButtonClass}>
           New Beat
         </Link>

@@ -9,7 +9,7 @@ export default async function NewAdminPage() {
 
   return (
     <div className="max-w-lg space-y-4">
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">New Admin</h1>
+      <h1 className="text-xl font-semibold text-zinc-900">New Admin</h1>
       <ResourceForm
         schemaKey="adminCreateSchema"
         defaultValues={adminCreateDefaults}

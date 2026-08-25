@@ -71,10 +71,10 @@ export function PatrolTrackingClient({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <Link href="/patrollings" className="text-sm text-zinc-500 hover:underline dark:text-zinc-400">
+          <Link href="/patrollings" className="text-sm text-zinc-500 hover:underline">
             &larr; Patrollings
           </Link>
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{entry.patrol_id}</h1>
+          <h1 className="text-xl font-semibold text-zinc-900">{entry.patrol_id}</h1>
         </div>
         <span className={patrolStatusBadgeClass(entry.status)}>{patrolStatusLabel(entry.status)}</span>
       </div>
@@ -102,14 +102,14 @@ export function PatrolTrackingClient({
         }}
       />
 
-      <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500 dark:text-zinc-400">
+      <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500">
         <LegendItem color="#eab308" label="Incident" />
         <LegendItem color="#dc2626" label="Case" />
         <span>Click a flag for details. Hover a route point for travel stats.</span>
       </div>
 
       {entry.status !== "in_progress" && (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-zinc-500">
           {entry.status === "pending"
             ? "This patrol hasn't started yet — no GPS trail."
             : "This patrol has ended — showing its final trail."}
@@ -133,8 +133,8 @@ function LegendItem({ color, label }: { color: string; label: string }) {
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">{label}</p>
-      <p className="mt-0.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">{value}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">{label}</p>
+      <p className="mt-0.5 text-sm font-medium text-zinc-900">{value}</p>
     </div>
   );
 }

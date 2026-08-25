@@ -71,7 +71,7 @@ export function CustomFieldsManager({ rangeId, fields }: { rangeId: string; fiel
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Custom Fields</h2>
+        <h2 className="text-sm font-semibold text-zinc-900">Custom Fields</h2>
         {!showNewForm && (
           <button
             type="button"
@@ -97,16 +97,16 @@ export function CustomFieldsManager({ rangeId, fields }: { rangeId: string; fiel
         />
       )}
 
-      <div className="divide-y divide-zinc-200 overflow-hidden rounded-lg border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+      <div className="divide-y divide-zinc-200 overflow-hidden rounded-lg border border-zinc-200">
         {fields.length === 0 && !showNewForm && (
-          <p className="px-4 py-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="px-4 py-6 text-center text-sm text-zinc-500">
             No custom fields configured for this range yet.
           </p>
         )}
 
         {fields.map((field) =>
           editingId === field.id ? (
-            <div key={field.id} className="bg-zinc-50 p-4 dark:bg-zinc-900/60">
+            <div key={field.id} className="bg-zinc-50 p-4">
               <CustomFieldForm
                 defaultValues={toFormInput(field)}
                 onCancel={() => setEditingId(null)}
@@ -119,13 +119,13 @@ export function CustomFieldsManager({ rangeId, fields }: { rangeId: string; fiel
             <div key={field.id} className="flex items-center justify-between gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-zinc-900 dark:text-zinc-50">{field.field_name}</span>
+                  <span className="font-medium text-zinc-900">{field.field_name}</span>
                   <span className={badgeClass(field.is_active)}>{field.is_active ? "Active" : "Disabled"}</span>
                   {field.is_required && (
-                    <span className="text-xs font-medium text-red-600 dark:text-red-400">Required</span>
+                    <span className="text-xs font-medium text-red-600">Required</span>
                   )}
                 </div>
-                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="mt-0.5 text-xs text-zinc-500">
                   {INPUT_TYPE_LABELS[field.input_type]}
                   {field.input_type === "dropdown" && field.options.length > 0 && ` — ${field.options.join(", ")}`}
                 </p>
@@ -206,9 +206,9 @@ function CustomFieldForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+    <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-zinc-200 p-4">
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -247,14 +247,14 @@ function CustomFieldForm({
             {options.map((opt) => (
               <span
                 key={opt}
-                className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700"
               >
                 {opt}
                 <button
                   type="button"
                   onClick={() => removeOption(opt)}
                   disabled={isPending}
-                  className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-100"
+                  className="text-zinc-400 hover:text-zinc-700"
                   aria-label={`Remove ${opt}`}
                 >
                   ×
@@ -288,7 +288,7 @@ function CustomFieldForm({
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
-            className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-700"
+            className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500"
             checked={isRequired}
             disabled={isPending}
             onChange={(e) => setIsRequired(e.target.checked)}
@@ -298,7 +298,7 @@ function CustomFieldForm({
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
-            className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-700"
+            className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500"
             checked={isActive}
             disabled={isPending}
             onChange={(e) => setIsActive(e.target.checked)}

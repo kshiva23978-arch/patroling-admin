@@ -23,12 +23,12 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
   return (
     <div className="max-w-2xl space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Edit Field User</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{user.employee_id}</p>
+        <h1 className="text-xl font-semibold text-zinc-900">Edit Field User</h1>
+        <p className="text-sm text-zinc-500">{user.employee_id}</p>
       </div>
 
       <section className={`space-y-4 p-6 ${cardClass}`}>
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Account</h2>
+        <h2 className="text-sm font-semibold text-zinc-900">Account</h2>
         <ResourceForm
           schemaKey="userUpdateSchema"
           defaultValues={{
@@ -62,7 +62,7 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
       </section>
 
       <section className={`space-y-4 p-6 ${cardClass}`}>
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Contact Details</h2>
+        <h2 className="text-sm font-semibold text-zinc-900">Contact Details</h2>
         <ResourceForm
           schemaKey="userDetailsSchema"
           defaultValues={{
@@ -82,7 +82,7 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
       </section>
 
       <section className={`space-y-4 p-6 ${cardClass}`}>
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Range Access</h2>
+        <h2 className="text-sm font-semibold text-zinc-900">Range Access</h2>
         <RangeAccessSection userId={id} assignedRanges={assignedRanges} allRanges={allRanges} />
       </section>
     </div>

@@ -45,7 +45,7 @@ export function PatrollingsTable({
   const columns: Column<Patrolling>[] = [
     {
       header: "Patrol ID",
-      render: (p) => <span className="font-medium text-zinc-900 dark:text-zinc-50">{p.patrol_id}</span>,
+      render: (p) => <span className="font-medium text-zinc-900">{p.patrol_id}</span>,
     },
     {
       header: "Ranger",

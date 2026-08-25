@@ -11,7 +11,7 @@ export default async function PatrolTypesPage({ searchParams }: { searchParams: 
   const { data: types, meta } = await listPatrolTypes(Number(page) || 1);
 
   const columns: Column<PatrolType>[] = [
-    { header: "Name", render: (t) => <span className="font-medium text-zinc-900 dark:text-zinc-50">{t.name}</span> },
+    { header: "Name", render: (t) => <span className="font-medium text-zinc-900">{t.name}</span> },
     {
       header: "Categories",
       render: (t) =>
@@ -48,7 +48,7 @@ export default async function PatrolTypesPage({ searchParams }: { searchParams: 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Patrol Types</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">Patrol Types</h1>
         <Link href="/patrol-types/new" className={primaryButtonClass}>
           New Patrol Type
         </Link>

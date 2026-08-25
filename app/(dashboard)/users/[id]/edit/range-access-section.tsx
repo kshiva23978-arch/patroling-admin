@@ -45,11 +45,11 @@ export function RangeAccessSection({ userId, assignedRanges, allRanges }: RangeA
 
   return (
     <div className="space-y-3">
-      <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-        {assignedRanges.length === 0 && <li className="py-2 text-sm text-zinc-500 dark:text-zinc-400">No ranges assigned.</li>}
+      <ul className="divide-y divide-zinc-100">
+        {assignedRanges.length === 0 && <li className="py-2 text-sm text-zinc-500">No ranges assigned.</li>}
         {assignedRanges.map((r) => (
           <li key={r.id} className="flex items-center justify-between py-2">
-            <span className="text-sm text-zinc-700 dark:text-zinc-300">{r.range_name}</span>
+            <span className="text-sm text-zinc-700">{r.range_name}</span>
             <button type="button" className={dangerButtonClass} disabled={isPending} onClick={() => handleRevoke(r.id)}>
               Remove
             </button>
@@ -59,7 +59,7 @@ export function RangeAccessSection({ userId, assignedRanges, allRanges }: RangeA
 
       <div className="flex items-end gap-2">
         <div className="flex-1 space-y-1">
-          <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400">Grant access to range</label>
+          <label className="block text-xs font-medium text-zinc-500">Grant access to range</label>
           <select className={inputClass} value={selected} onChange={(e) => setSelected(e.target.value)} disabled={isPending}>
             <option value="">Select a range…</option>
             {available.map((r) => (

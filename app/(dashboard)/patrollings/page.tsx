@@ -35,7 +35,7 @@ export default async function PatrollingsPage({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Patrollings</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">Patrollings</h1>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -54,8 +54,8 @@ export default async function PatrollingsPage({
                 href={href}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                   active
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                    : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                    ? "bg-zinc-900 text-white"
+                    : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
                 }`}
               >
                 {tab.label}
@@ -86,8 +86,8 @@ export default async function PatrollingsPage({
                 href={href}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                   active
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                    : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                    ? "bg-zinc-900 text-white"
+                    : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
                 }`}
               >
                 {tab.label}

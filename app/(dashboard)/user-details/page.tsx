@@ -9,7 +9,7 @@ export default async function UserDetailsPage({ searchParams }: { searchParams: 
   const { data: details, meta } = await listUserDetails(Number(page) || 1);
 
   const columns: Column<UserDetails>[] = [
-    { header: "Full Name", render: (d) => <span className="font-medium text-zinc-900 dark:text-zinc-50">{d.fullname}</span> },
+    { header: "Full Name", render: (d) => <span className="font-medium text-zinc-900">{d.fullname}</span> },
     { header: "Mobile", render: (d) => d.mobile_number || <span className="text-zinc-400">—</span> },
     { header: "Email", render: (d) => d.email || <span className="text-zinc-400">—</span> },
     {
@@ -25,8 +25,8 @@ export default async function UserDetailsPage({ searchParams }: { searchParams: 
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">User Details</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <h1 className="text-xl font-semibold text-zinc-900">User Details</h1>
+        <p className="text-sm text-zinc-500">
           Contact details for field users. Edit these from a user&apos;s Manage page.
         </p>
       </div>

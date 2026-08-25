@@ -20,7 +20,7 @@ export default async function VehiclesPage({
   const rangeName = new Map(ranges.map((r) => [r.id, r.range_name]));
 
   const columns: Column<Vehicle>[] = [
-    { header: "Registration", render: (v) => <span className="font-medium text-zinc-900 dark:text-zinc-50">{v.registration_number}</span> },
+    { header: "Registration", render: (v) => <span className="font-medium text-zinc-900">{v.registration_number}</span> },
     { header: "Type", render: (v) => <span className="capitalize">{v.type}</span> },
     { header: "Range", render: (v) => rangeName.get(v.range_id) ?? v.range_id },
     { header: "Status", render: (v) => <span className={badgeClass(v.status)}>{v.status ? "Active" : "Inactive"}</span> },
@@ -44,7 +44,7 @@ export default async function VehiclesPage({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Vehicles</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">Vehicles</h1>
         <Link href="/vehicles/new" className={primaryButtonClass}>
           New Vehicle
         </Link>

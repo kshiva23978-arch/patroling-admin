@@ -483,7 +483,7 @@ export function LiveMap({
 
   if (error) {
     return (
-      <div className="flex h-96 items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 px-6 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400">
+      <div className="flex h-96 items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 px-6 text-center text-sm text-zinc-500">
         {error}
       </div>
     );
@@ -492,13 +492,13 @@ export function LiveMap({
   if (points.length === 0) {
     return (
       <div className="relative">
-        <div ref={containerRef} className="h-96 w-full rounded-lg border border-zinc-200 dark:border-zinc-800" />
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-white/70 text-sm text-zinc-500 dark:bg-zinc-950/70 dark:text-zinc-400">
+        <div ref={containerRef} className="h-96 w-full rounded-lg border border-zinc-200" />
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-white/70 text-sm text-zinc-500">
           No GPS points recorded yet.
         </div>
       </div>
     );
   }
 
-  return <div ref={containerRef} className="h-96 w-full rounded-lg border border-zinc-200 dark:border-zinc-800" />;
+  return <div ref={containerRef} className="h-96 w-full rounded-lg border border-zinc-200" />;
 }

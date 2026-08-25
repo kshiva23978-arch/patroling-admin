@@ -145,7 +145,7 @@ export function ResourceForm<K extends SchemaKey>({
   return (
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
       {rootError && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {rootError}
         </div>
       )}
@@ -206,7 +206,7 @@ export function ResourceForm<K extends SchemaKey>({
                   id={fieldId}
                   type="checkbox"
                   disabled={field.disabled || isPending}
-                  className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-700"
+                  className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500"
                   {...register(field.name)}
                 />
                 <span className={labelClass}>{field.label}</span>

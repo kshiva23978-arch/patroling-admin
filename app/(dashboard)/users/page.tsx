@@ -17,7 +17,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   const designationName = new Map(designations.map((d) => [d.id, d.designation_name]));
 
   const columns: Column<FieldUser>[] = [
-    { header: "Employee ID", render: (u) => <span className="font-medium text-zinc-900 dark:text-zinc-50">{u.employee_id}</span> },
+    { header: "Employee ID", render: (u) => <span className="font-medium text-zinc-900">{u.employee_id}</span> },
     { header: "Role", render: (u) => (u.role ? roleName.get(u.role) ?? u.role : <span className="text-zinc-400">—</span>) },
     {
       header: "Designation",
@@ -37,7 +37,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Field Users</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">Field Users</h1>
         <Link href="/users/new" className={primaryButtonClass}>
           New Field User
         </Link>

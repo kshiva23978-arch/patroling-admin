@@ -11,7 +11,7 @@ export default async function RolesPage({ searchParams }: { searchParams: Promis
   const { data: roles, meta } = await listRoles(Number(page) || 1);
 
   const columns: Column<Role>[] = [
-    { header: "Name", render: (r) => <span className="font-medium text-zinc-900 dark:text-zinc-50">{r.name}</span> },
+    { header: "Name", render: (r) => <span className="font-medium text-zinc-900">{r.name}</span> },
     { header: "Description", render: (r) => r.description || <span className="text-zinc-400">—</span> },
     { header: "Status", render: (r) => <span className={badgeClass(r.status)}>{r.status ? "Active" : "Inactive"}</span> },
     {
@@ -34,7 +34,7 @@ export default async function RolesPage({ searchParams }: { searchParams: Promis
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Roles</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">Roles</h1>
         <Link href="/roles/new" className={primaryButtonClass}>
           New Role
         </Link>

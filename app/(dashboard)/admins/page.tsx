@@ -21,7 +21,7 @@ export default async function AdminsPage({ searchParams }: { searchParams: Promi
   const designationName = new Map(designations.map((d) => [d.id, d.designation_name]));
 
   const columns: Column<Admin>[] = [
-    { header: "Employee ID", render: (a) => <span className="font-medium text-zinc-900 dark:text-zinc-50">{a.employee_id}</span> },
+    { header: "Employee ID", render: (a) => <span className="font-medium text-zinc-900">{a.employee_id}</span> },
     { header: "Role", render: (a) => (a.role ? roleName.get(a.role) ?? a.role : <span className="text-zinc-400">—</span>) },
     {
       header: "Designation",
@@ -50,7 +50,7 @@ export default async function AdminsPage({ searchParams }: { searchParams: Promi
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Admins</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">Admins</h1>
         <Link href="/admins/new" className={primaryButtonClass}>
           New Admin
         </Link>

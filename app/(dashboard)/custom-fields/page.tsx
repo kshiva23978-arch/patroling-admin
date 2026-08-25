@@ -16,8 +16,8 @@ export default async function CustomFieldsPage({
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Custom Fields</h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <h1 className="text-xl font-semibold text-zinc-900">Custom Fields</h1>
+        <p className="mt-1 text-sm text-zinc-500">
           Define extra fields per range/category — they show up automatically on that range&apos;s patrol report
           form in the field app.
         </p>
@@ -25,7 +25,7 @@ export default async function CustomFieldsPage({
 
       <form method="get" className="flex items-end gap-2">
         <div className="w-72 space-y-1">
-          <label htmlFor="range_id" className="block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          <label htmlFor="range_id" className="block text-xs font-medium text-zinc-500">
             Range / Category
           </label>
           <select id="range_id" name="range_id" defaultValue={selectedRangeId ?? ""} className={inputClass}>
@@ -44,7 +44,7 @@ export default async function CustomFieldsPage({
 
       {!selectedRangeId ? (
         <div className={`p-6 ${cardClass}`}>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Create a range first before adding custom fields.</p>
+          <p className="text-sm text-zinc-600">Create a range first before adding custom fields.</p>
         </div>
       ) : (
         <div className={`p-4 ${cardClass}`}>

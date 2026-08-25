@@ -8,7 +8,7 @@ export default async function EditRolePage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="max-w-lg space-y-4">
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Edit Role</h1>
+      <h1 className="text-xl font-semibold text-zinc-900">Edit Role</h1>
       <ResourceForm
         schemaKey="roleSchema"
         defaultValues={{ name: role.name, description: role.description ?? "", status: role.status }}
