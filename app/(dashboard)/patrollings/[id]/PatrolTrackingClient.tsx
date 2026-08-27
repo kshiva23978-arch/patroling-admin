@@ -96,6 +96,7 @@ export function PatrolTrackingClient({
       <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500">
         <LegendItem color="#16a34a" label="Start (A)" />
         <LegendItem color="#dc2626" label="End (B)" />
+        <LegendItem color="#2563eb" label="Travel Mode Change" />
         <LegendItem color="#eab308" label="Incident" />
         <LegendItem color="#dc2626" label="Case" />
         <span>Click a flag for details.</span>

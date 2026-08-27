@@ -137,6 +137,66 @@ async function buildSnappedPath(
   return path;
 }
 
+function modeLabelFor(kind: MarkerKind): string {
+  switch (kind) {
+    case "walking":
+      return "Walking";
+    case "boat":
+      return "Boat";
+    case "car":
+      return "4-Wheeler";
+    default:
+      // Genuinely possible mid-patrol: the ranger toggled a travel mode off
+      // (in the app's "Currently Traveling" switches) without picking a new
+      // one before the next ping fired.
+      return "Mode not set";
+  }
+}
+
+/** Small white glyph for a travel-mode change marker's badge circle. */
+function modeGlyphMarkup(kind: MarkerKind): string {
+  switch (kind) {
+    case "walking":
+      return `
+        <circle cx="12" cy="6" r="2" fill="white"/>
+        <g stroke="white" stroke-width="2" stroke-linecap="round" fill="none">
+          <line x1="12" y1="8" x2="12" y2="14"/>
+          <line x1="12" y1="14" x2="9" y2="19"/>
+          <line x1="12" y1="14" x2="15" y2="19"/>
+          <line x1="12" y1="10" x2="8" y2="13"/>
+          <line x1="12" y1="10" x2="16" y2="9"/>
+        </g>`;
+    case "car":
+      return `
+        <path fill="white" d="M4 15l1.5-4.5A2 2 0 0 1 7.4 9h9.2a2 2 0 0 1 1.9 1.5L20 15v3a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-.5H7v.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3z"/>
+        <circle cx="7.5" cy="17.5" r="1.4" fill="#0f172a"/>
+        <circle cx="16.5" cy="17.5" r="1.4" fill="#0f172a"/>`;
+    case "boat":
+      return `
+        <path fill="white" d="M4 15h16l-1 3a2 2 0 0 1-1.9 1.4H6.9A2 2 0 0 1 5 18l-1-3z"/>
+        <line x1="12" y1="4" x2="12" y2="15" stroke="white" stroke-width="1.5"/>
+        <path fill="white" opacity="0.85" d="M12 5.5l4.5 8.5H12V5.5z"/>`;
+    default:
+      return `<circle cx="12" cy="12" r="3" fill="white"/>`;
+  }
+}
+
+/** A small badge marking where the ranger's travel mode changed along the trail. */
+function buildModeChangeIcon(kind: MarkerKind): L.DivIcon {
+  const size = 26;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}">
+    <circle cx="12" cy="12" r="11" fill="#2563eb" stroke="white" stroke-width="2"/>
+    ${modeGlyphMarkup(kind)}
+  </svg>`;
+
+  return L.divIcon({
+    html: svg,
+    className: "",
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -247,7 +307,10 @@ const DEFAULT_CENTER: L.LatLngTuple = [20.5937, 78.9629]; // India, used when th
  * Renders a patrol's GPS trail as a Google Maps-style yellow route — vehicle
  * runs snapped to roads via OSRM, walking/boat runs left as the raw recorded
  * points (a ping every ~30s while the patrol is active) connected in order.
- * No per-point markers are shown, just the path itself.
+ * No per-point markers are shown, just the path itself — except where the
+ * ranger's travel mode actually changed (walking ↔ a vehicle, or between
+ * vehicle types), each marked with a small blue badge (hover for the mode
+ * switched to and when).
  *
  * Incidents and cases are plotted as flags (yellow/red) wherever they carry
  * a location — click one to see its full details, including photos.
@@ -268,6 +331,7 @@ export function LiveMap({
   const snappedSegmentCacheRef = useRef<Map<string, L.LatLngTuple[]>>(new Map());
   const startMarkerRef = useRef<L.Marker | null>(null);
   const endMarkerRef = useRef<L.Marker | null>(null);
+  const modeChangeMarkersRef = useRef<L.Marker[]>([]);
   const flagMarkersRef = useRef<L.Marker[]>([]);
   const [ready, setReady] = useState(false);
 
@@ -300,6 +364,7 @@ export function LiveMap({
       polylineCasingRef.current = null;
       startMarkerRef.current = null;
       endMarkerRef.current = null;
+      modeChangeMarkersRef.current = [];
       setReady(false);
     };
     // Only mount once — path updates are handled below.
@@ -339,6 +404,25 @@ export function LiveMap({
         .addTo(mapRef.current)
         .bindTooltip("End", { direction: "top" });
     }
+
+    modeChangeMarkersRef.current.forEach((marker) => marker.remove());
+    const modeChangeMarkers: L.Marker[] = [];
+    for (let i = 1; i < points.length; i++) {
+      const prevKind = markerKindFor(points[i - 1]);
+      const kind = markerKindFor(points[i]);
+      if (kind === prevKind) continue;
+
+      const point = points[i];
+      const time = new Date(point.recorded_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      const marker = L.marker([point.latitude, point.longitude], {
+        icon: buildModeChangeIcon(kind),
+        zIndexOffset: 950,
+      })
+        .addTo(mapRef.current)
+        .bindTooltip(`Switched to ${modeLabelFor(kind)} · ${time}`, { direction: "top" });
+      modeChangeMarkers.push(marker);
+    }
+    modeChangeMarkersRef.current = modeChangeMarkers;
 
     if (last) mapRef.current.panTo([last.latitude, last.longitude]);
 
