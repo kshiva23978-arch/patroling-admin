@@ -197,10 +197,12 @@ function buildMarkerIcon(kind: MarkerKind, highlighted: boolean): L.DivIcon {
   const ring = highlighted
     ? '<circle cx="12" cy="12" r="11" fill="none" stroke="white" stroke-width="1.5"/>'
     : "";
+  // Route markers show a plain dot regardless of travel mode — the
+  // walking/car/boat glyphs are only used elsewhere (tooltip text).
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}">
     <circle cx="12" cy="12" r="11" fill="${bgColor}"/>
     ${ring}
-    ${glyphMarkup(kind)}
+    ${glyphMarkup("unknown")}
   </svg>`;
 
   return L.divIcon({
