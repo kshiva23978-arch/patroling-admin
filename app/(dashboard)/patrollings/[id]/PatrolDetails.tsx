@@ -15,6 +15,12 @@ import type {
 // patrolled" estimate.
 const PATROL_SWATH_WIDTH_KM = 0.1;
 
+const VEHICLE_TYPE_LABELS: Record<string, string> = {
+  "2_wheeler": "2 Wheeler",
+  "4_wheeler": "4 Wheeler",
+  boat: "Boat",
+};
+
 type TravelKind = "walking" | "4_wheeler" | "boat" | "unset";
 
 const TRAVEL_KIND_LABELS: Record<TravelKind, string> = {
@@ -169,6 +175,41 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
                 {name === entry.incharge_staff && " (In-charge)"}
               </span>
             ))}
+          </div>
+        )}
+      </Section>
+
+      <Section title={`Vehicles (${entry.vehicles.length})`}>
+        {entry.vehicles.length === 0 ? (
+          <p className="text-sm text-zinc-500">No vehicles recorded.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-zinc-200 text-sm">
+              <thead>
+                <tr className="text-left text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                  <th className="py-2 pr-4">Type</th>
+                  <th className="py-2 pr-4">Registration</th>
+                  <th className="py-2 pr-4">Start Odometer</th>
+                  <th className="py-2 pr-4">End Odometer</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {entry.vehicles.map((v) => (
+                  <tr key={v.id}>
+                    <td className="py-2 pr-4 font-medium text-zinc-900">
+                      {VEHICLE_TYPE_LABELS[v.type] ?? v.type}
+                    </td>
+                    <td className="py-2 pr-4 text-zinc-600">{v.registration_no || "—"}</td>
+                    <td className="py-2 pr-4 text-zinc-600">
+                      {v.start_odometer !== null ? `${v.start_odometer.toFixed(1)} km` : "—"}
+                    </td>
+                    <td className="py-2 pr-4 text-zinc-600">
+                      {v.end_odometer !== null ? `${v.end_odometer.toFixed(1)} km` : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </Section>
