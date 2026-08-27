@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { PhotoGrid } from "@/components/media/PhotoLightbox";
 import { getActivity } from "@/lib/resources/activities";
 import { cardClass, badgeClass } from "@/lib/ui-classes";
 import { ActivityMap } from "./ActivityMap";
@@ -69,23 +70,7 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
 
       <div className={`space-y-3 p-4 ${cardClass}`}>
         <h2 className="text-sm font-semibold text-zinc-900">Photos ({activity.media.length})</h2>
-        {activity.media.length === 0 ? (
-          <p className="text-sm text-zinc-400">No photos captured.</p>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {activity.media.map((m) => (
-              <figure key={m.id} className="space-y-1">
-                {/* eslint-disable-next-line @next/next/no-img-element -- authenticated proxy route, next/image can't fetch it with a bearer token */}
-                <img
-                  src={`/api/activity-media/${m.id}`}
-                  alt={m.caption ?? "Activity photo"}
-                  className="h-40 w-full rounded-md border border-zinc-200 object-cover"
-                />
-                {m.caption && <figcaption className="text-xs text-zinc-500">{m.caption}</figcaption>}
-              </figure>
-            ))}
-          </div>
-        )}
+        <PhotoGrid items={activity.media} baseUrl="/api/activity-media" emptyMessage="No photos captured." />
       </div>
 
       {activity.status === "completed" && (

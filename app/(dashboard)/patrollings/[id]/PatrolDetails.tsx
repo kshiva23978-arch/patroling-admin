@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { PhotoGrid } from "@/components/media/PhotoLightbox";
 import { cardClass } from "@/lib/ui-classes";
 import { haversineKm } from "@/lib/geo";
 import type {
@@ -83,131 +83,6 @@ function CustomFieldValue({ field }: { field: PatrolCustomFieldValueRef }) {
   return <p className="text-sm font-medium text-zinc-900">{field.value || "—"}</p>;
 }
 
-/** Fullscreen viewer for a photo grid's images — Escape to close, arrow keys
- * or the on-screen buttons to step between the grid's other photos. */
-function Lightbox({
-  urls,
-  index,
-  onClose,
-  onNavigate,
-}: {
-  urls: string[];
-  index: number;
-  onClose: () => void;
-  onNavigate: (index: number) => void;
-}) {
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowLeft") onNavigate((index - 1 + urls.length) % urls.length);
-      if (e.key === "ArrowRight") onNavigate((index + 1) % urls.length);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [index, urls.length, onClose, onNavigate]);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-6"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-    >
-      <button
-        onClick={onClose}
-        aria-label="Close"
-        className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
-      >
-        <CloseIcon />
-      </button>
-
-      {urls.length > 1 && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onNavigate((index - 1 + urls.length) % urls.length);
-          }}
-          aria-label="Previous photo"
-          className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
-        >
-          <ChevronIcon direction="left" />
-        </button>
-      )}
-
-      {/* eslint-disable-next-line @next/next/no-img-element -- proxied, authenticated backend image */}
-      <img
-        src={urls[index]}
-        alt=""
-        onClick={(e) => e.stopPropagation()}
-        className="max-h-full max-w-full rounded-md object-contain"
-      />
-
-      {urls.length > 1 && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onNavigate((index + 1) % urls.length);
-          }}
-          aria-label="Next photo"
-          className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
-        >
-          <ChevronIcon direction="right" />
-        </button>
-      )}
-
-      {urls.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-xs text-white">
-          {index + 1} / {urls.length}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function ChevronIcon({ direction }: { direction: "left" | "right" }) {
-  const d = direction === "left" ? "M15 6l-6 6 6 6" : "M9 6l6 6-6 6";
-  return (
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d={d} strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function PhotoGrid({ ids, baseUrl }: { ids: string[]; baseUrl: string }) {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-  if (ids.length === 0) {
-    return <p className="text-xs text-zinc-400">No photos.</p>;
-  }
-
-  const urls = ids.map((id) => `${baseUrl}/${id}`);
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {ids.map((id, index) => (
-        // eslint-disable-next-line @next/next/no-img-element -- proxied, authenticated backend image
-        <img
-          key={id}
-          src={urls[index]}
-          alt=""
-          onClick={() => setOpenIndex(index)}
-          className="h-20 w-20 cursor-pointer rounded-md border border-zinc-200 object-cover transition hover:opacity-80"
-        />
-      ))}
-      {openIndex !== null && (
-        <Lightbox urls={urls} index={openIndex} onClose={() => setOpenIndex(null)} onNavigate={setOpenIndex} />
-      )}
-    </div>
-  );
-}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -376,7 +251,7 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
                       ? `${incident.location.latitude.toFixed(5)}, ${incident.location.longitude?.toFixed(5)}`
                       : "No location recorded")}
                 </p>
-                <PhotoGrid ids={incident.photos.map((p) => p.id)} baseUrl="/api/incident-media" />
+                <PhotoGrid items={incident.photos} baseUrl="/api/incident-media" />
               </div>
             ))}
           </div>
@@ -422,7 +297,7 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
                       ? `${caseReport.location.latitude.toFixed(5)}, ${caseReport.location.longitude?.toFixed(5)}`
                       : "No location recorded")}
                 </p>
-                <PhotoGrid ids={caseReport.photos.map((p) => p.id)} baseUrl="/api/case-media" />
+                <PhotoGrid items={caseReport.photos} baseUrl="/api/case-media" />
               </div>
             ))}
           </div>
