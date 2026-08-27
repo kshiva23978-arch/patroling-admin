@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { cumulativeDistancesKm } from "@/lib/geo";
 import type { PatrolCaseRef, PatrolIncidentRef, PatrolRoutePoint } from "@/lib/resources/patrollings";
 
 type MarkerKind = "walking" | "car" | "boat" | "unknown";
@@ -138,50 +137,6 @@ async function buildSnappedPath(
   return path;
 }
 
-function modeLabelFor(point: PatrolRoutePoint): string {
-  switch (markerKindFor(point)) {
-    case "walking":
-      return "Walking";
-    case "boat":
-      return "Boat";
-    case "car":
-      return "4-Wheeler";
-    default:
-      // Genuinely possible mid-patrol: the ranger toggled a travel mode off
-      // (in the app's "Currently Traveling" switches) without picking a new
-      // one before this ping fired.
-      return "Mode not set";
-  }
-}
-
-/** Small white glyph, positioned to sit inside a 24x24 badge circle. */
-function glyphMarkup(kind: MarkerKind): string {
-  switch (kind) {
-    case "walking":
-      return `
-        <circle cx="12" cy="6" r="2" fill="white"/>
-        <g stroke="white" stroke-width="2" stroke-linecap="round" fill="none">
-          <line x1="12" y1="8" x2="12" y2="14"/>
-          <line x1="12" y1="14" x2="9" y2="19"/>
-          <line x1="12" y1="14" x2="15" y2="19"/>
-          <line x1="12" y1="10" x2="8" y2="13"/>
-          <line x1="12" y1="10" x2="16" y2="9"/>
-        </g>`;
-    case "car":
-      return `
-        <path fill="white" d="M4 15l1.5-4.5A2 2 0 0 1 7.4 9h9.2a2 2 0 0 1 1.9 1.5L20 15v3a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-.5H7v.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3z"/>
-        <circle cx="7.5" cy="17.5" r="1.4" fill="#0f172a"/>
-        <circle cx="16.5" cy="17.5" r="1.4" fill="#0f172a"/>`;
-    case "boat":
-      return `
-        <path fill="white" d="M4 15h16l-1 3a2 2 0 0 1-1.9 1.4H6.9A2 2 0 0 1 5 18l-1-3z"/>
-        <line x1="12" y1="4" x2="12" y2="15" stroke="white" stroke-width="1.5"/>
-        <path fill="white" opacity="0.85" d="M12 5.5l4.5 8.5H12V5.5z"/>`;
-    default:
-      return `<circle cx="12" cy="12" r="3" fill="white"/>`;
-  }
-}
-
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -189,28 +144,6 @@ function escapeHtml(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
-
-function buildMarkerIcon(kind: MarkerKind, highlighted: boolean): L.DivIcon {
-  const size = highlighted ? 32 : 20;
-  const bgColor = highlighted ? "#059669" : "#52525b";
-  const ring = highlighted
-    ? '<circle cx="12" cy="12" r="11" fill="none" stroke="white" stroke-width="1.5"/>'
-    : "";
-  // Route markers show a plain dot regardless of travel mode — the
-  // walking/car/boat glyphs are only used elsewhere (tooltip text).
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}">
-    <circle cx="12" cy="12" r="11" fill="${bgColor}"/>
-    ${ring}
-    ${glyphMarkup("unknown")}
-  </svg>`;
-
-  return L.divIcon({
-    html: svg,
-    className: "",
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  });
 }
 
 /** A pin-style flag: pole planted at the point, flag pennant near the top. */
@@ -291,73 +224,33 @@ function statBlock(label: string, value: string): string {
   </div>`;
 }
 
-function buildInfoContent(
-  point: PatrolRoutePoint,
-  distanceSoFarKm: number,
-  stats: PatrolStats,
-): string {
-  const time = new Date(point.recorded_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-  return `
-    <div style="min-width:210px;padding:2px 2px 4px;font-family:ui-sans-serif,system-ui,sans-serif;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <span style="font-size:13px;font-weight:700;color:#0f172a;">${modeLabelFor(point)}</span>
-        <span style="font-size:11px;color:#71717a;">${time}</span>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;row-gap:8px;column-gap:16px;">
-        ${statBlock("Persons", String(stats.staffCount))}
-        ${statBlock("Distance", `${distanceSoFarKm.toFixed(2)} km`)}
-        ${statBlock("Incidents", String(stats.incidentsCount))}
-        ${statBlock("Cases", String(stats.casesCount))}
-      </div>
-    </div>
-  `;
-}
-
-export interface PatrolStats {
-  staffCount: number;
-  incidentsCount: number;
-  casesCount: number;
-}
-
 const DEFAULT_CENTER: L.LatLngTuple = [20.5937, 78.9629]; // India, used when there's no GPS trail yet.
 
 /**
- * Renders a patrol's GPS trail as a polyline — vehicle runs snapped to roads
- * via OSRM, walking/boat runs left as the raw recorded points (a ping every
- * ~30s while the patrol is active) connected in order — with one marker per
- * point. The marker's glyph reflects how the ranger was traveling at that
- * point (walking/4-wheeler/boat), and the most recent point is highlighted
- * as the current position. Hovering any point shows a tooltip with that
- * point's travel mode/time plus the patrol's overall stats (persons,
- * distance covered so far, incidents, cases).
+ * Renders a patrol's GPS trail as a Google Maps-style yellow route — vehicle
+ * runs snapped to roads via OSRM, walking/boat runs left as the raw recorded
+ * points (a ping every ~30s while the patrol is active) connected in order.
+ * No per-point markers are shown, just the path itself.
  *
  * Incidents and cases are plotted as flags (yellow/red) wherever they carry
  * a location — click one to see its full details, including photos.
  */
 export function LiveMap({
   points,
-  stats,
   incidents,
   caseReports,
 }: {
   points: PatrolRoutePoint[];
-  stats: PatrolStats;
   incidents: PatrolIncidentRef[];
   caseReports: PatrolCaseRef[];
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const polylineRef = useRef<L.Polyline | null>(null);
+  const polylineCasingRef = useRef<L.Polyline | null>(null);
   const snappedSegmentCacheRef = useRef<Map<string, L.LatLngTuple[]>>(new Map());
-  const markersRef = useRef<L.Marker[]>([]);
   const flagMarkersRef = useRef<L.Marker[]>([]);
-  const statsRef = useRef(stats);
   const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    statsRef.current = stats;
-  }, [stats]);
 
   // Mount the map exactly once. Guards against React StrictMode's dev-mode
   // double-invoke (which would otherwise try to initialize Leaflet twice on
@@ -374,7 +267,10 @@ export function LiveMap({
       maxZoom: 19,
     }).addTo(map);
 
-    polylineRef.current = L.polyline([], { color: "#15803d", weight: 4 }).addTo(map);
+    // Google Maps-style route: a slightly wider dark casing under a yellow
+    // line, giving the path an outlined look instead of a flat stroke.
+    polylineCasingRef.current = L.polyline([], { color: "#8a6d00", weight: 7, opacity: 0.9 }).addTo(map);
+    polylineRef.current = L.polyline([], { color: "#fbbc04", weight: 5 }).addTo(map);
     mapRef.current = map;
     setReady(true);
 
@@ -382,36 +278,21 @@ export function LiveMap({
       map.remove();
       mapRef.current = null;
       polylineRef.current = null;
+      polylineCasingRef.current = null;
       setReady(false);
     };
-    // Only mount once — path/marker updates are handled below.
+    // Only mount once — path updates are handled below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (!ready || !mapRef.current || !polylineRef.current) return;
+    if (!ready || !mapRef.current || !polylineRef.current || !polylineCasingRef.current) return;
 
     let cancelled = false;
     buildSnappedPath(points, snappedSegmentCacheRef.current).then((path) => {
-      if (!cancelled) polylineRef.current!.setLatLngs(path);
-    });
-
-    const distances = cumulativeDistancesKm(points.map((p) => ({ lat: p.latitude, lng: p.longitude })));
-
-    markersRef.current.forEach((marker) => marker.remove());
-    markersRef.current = points.map((point, index) => {
-      const isLast = index === points.length - 1;
-      const marker = L.marker([point.latitude, point.longitude], {
-        icon: buildMarkerIcon(markerKindFor(point), isLast),
-        zIndexOffset: isLast ? 999 : index,
-      }).addTo(mapRef.current!);
-
-      marker.bindTooltip(buildInfoContent(point, distances[index], statsRef.current), {
-        direction: "top",
-        opacity: 1,
-      });
-
-      return marker;
+      if (cancelled) return;
+      polylineCasingRef.current!.setLatLngs(path);
+      polylineRef.current!.setLatLngs(path);
     });
 
     const last = points.at(-1);

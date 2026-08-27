@@ -91,21 +91,12 @@ export function PatrolTrackingClient({
         <Info label="Incidents / Cases" value={`${entry.incidents.length} / ${entry.case_reports.length}`} />
       </div>
 
-      <LiveMap
-        points={points}
-        incidents={entry.incidents}
-        caseReports={entry.case_reports}
-        stats={{
-          staffCount: entry.staff_names.length,
-          incidentsCount: entry.incidents.length,
-          casesCount: entry.case_reports.length,
-        }}
-      />
+      <LiveMap points={points} incidents={entry.incidents} caseReports={entry.case_reports} />
 
       <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500">
         <LegendItem color="#eab308" label="Incident" />
         <LegendItem color="#dc2626" label="Case" />
-        <span>Click a flag for details. Hover a route point for travel stats.</span>
+        <span>Click a flag for details.</span>
       </div>
 
       {entry.status !== "in_progress" && (
