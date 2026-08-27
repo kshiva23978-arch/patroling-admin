@@ -94,6 +94,8 @@ export function PatrolTrackingClient({
       <LiveMap points={points} incidents={entry.incidents} caseReports={entry.case_reports} />
 
       <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500">
+        <LegendItem color="#16a34a" label="Start (A)" />
+        <LegendItem color="#dc2626" label="End (B)" />
         <LegendItem color="#eab308" label="Incident" />
         <LegendItem color="#dc2626" label="Case" />
         <span>Click a flag for details.</span>

@@ -163,6 +163,23 @@ function buildFlagIcon(color: string): L.DivIcon {
   });
 }
 
+/** A Google Maps-style teardrop pin with a letter label, for the trail's start/end points. */
+function buildEndpointIcon(label: string, color: string): L.DivIcon {
+  const size = 34;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" width="${size}" height="${(size * 32) / 24}">
+    <path d="M12 0C5.373 0 0 5.373 0 12c0 8.5 12 20 12 20s12-11.5 12-20C24 5.373 18.627 0 12 0z" fill="${color}" stroke="white" stroke-width="1.5"/>
+    <circle cx="12" cy="12" r="7" fill="white"/>
+    <text x="12" y="16.5" text-anchor="middle" font-size="11" font-weight="700" font-family="ui-sans-serif,system-ui,sans-serif" fill="${color}">${label}</text>
+  </svg>`;
+
+  return L.divIcon({
+    html: svg,
+    className: "",
+    iconSize: [size, (size * 32) / 24],
+    iconAnchor: [size / 2, (size * 32) / 24],
+  });
+}
+
 function formatDateTime(value: string | null): string {
   if (!value) return "—";
   return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
@@ -249,6 +266,8 @@ export function LiveMap({
   const polylineRef = useRef<L.Polyline | null>(null);
   const polylineCasingRef = useRef<L.Polyline | null>(null);
   const snappedSegmentCacheRef = useRef<Map<string, L.LatLngTuple[]>>(new Map());
+  const startMarkerRef = useRef<L.Marker | null>(null);
+  const endMarkerRef = useRef<L.Marker | null>(null);
   const flagMarkersRef = useRef<L.Marker[]>([]);
   const [ready, setReady] = useState(false);
 
@@ -279,6 +298,8 @@ export function LiveMap({
       mapRef.current = null;
       polylineRef.current = null;
       polylineCasingRef.current = null;
+      startMarkerRef.current = null;
+      endMarkerRef.current = null;
       setReady(false);
     };
     // Only mount once — path updates are handled below.
@@ -295,7 +316,30 @@ export function LiveMap({
       polylineRef.current!.setLatLngs(path);
     });
 
+    startMarkerRef.current?.remove();
+    endMarkerRef.current?.remove();
+    startMarkerRef.current = null;
+    endMarkerRef.current = null;
+
+    const first = points[0];
     const last = points.at(-1);
+    if (first) {
+      startMarkerRef.current = L.marker([first.latitude, first.longitude], {
+        icon: buildEndpointIcon("A", "#16a34a"),
+        zIndexOffset: 900,
+      })
+        .addTo(mapRef.current)
+        .bindTooltip("Start", { direction: "top" });
+    }
+    if (last && last !== first) {
+      endMarkerRef.current = L.marker([last.latitude, last.longitude], {
+        icon: buildEndpointIcon("B", "#dc2626"),
+        zIndexOffset: 900,
+      })
+        .addTo(mapRef.current)
+        .bindTooltip("End", { direction: "top" });
+    }
+
     if (last) mapRef.current.panTo([last.latitude, last.longitude]);
 
     return () => {

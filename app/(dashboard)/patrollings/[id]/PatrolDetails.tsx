@@ -2,7 +2,7 @@
 
 import { PhotoGrid } from "@/components/media/PhotoLightbox";
 import { cardClass } from "@/lib/ui-classes";
-import { haversineKm } from "@/lib/geo";
+import { areaCoveredKm2, areaPatrolledKm2, haversineKm } from "@/lib/geo";
 import type {
   Patrolling,
   PatrolRoutePoint,
@@ -10,24 +10,46 @@ import type {
   PatrolLeaderRef,
 } from "@/lib/resources/patrollings";
 
-const VEHICLE_TYPE_LABELS: Record<string, string> = {
-  "2_wheeler": "2 Wheeler",
+// Total width (both sides combined) of the ground strip assumed visible
+// while moving along the route — used to turn path length into an "area
+// patrolled" estimate.
+const PATROL_SWATH_WIDTH_KM = 0.1;
+
+type TravelKind = "walking" | "4_wheeler" | "boat" | "unset";
+
+const TRAVEL_KIND_LABELS: Record<TravelKind, string> = {
+  walking: "Walking",
   "4_wheeler": "4 Wheeler",
   boat: "Boat",
+  unset: "Mode Not Set",
 };
 
-/** Distance covered while walking, summed only across consecutive GPS points that were both recorded while walking. */
-function walkingDistanceKm(points: PatrolRoutePoint[]): number {
-  let total = 0;
+function travelKindFor(point: PatrolRoutePoint): TravelKind {
+  if (point.travel_mode === "walking") return "walking";
+  if (point.vehicle_type === "4_wheeler") return "4_wheeler";
+  if (point.vehicle_type === "boat") return "boat";
+  return "unset";
+}
+
+/**
+ * Distance (km) covered per travel mode, computed straight from the GPS
+ * trail rather than vehicle odometer readings — summed only across
+ * consecutive points that were both recorded under the same mode, so a
+ * mode change between two points isn't misattributed to either side.
+ */
+function distanceByModeKm(points: PatrolRoutePoint[]): Record<TravelKind, number> {
+  const totals: Record<TravelKind, number> = { walking: 0, "4_wheeler": 0, boat: 0, unset: 0 };
   for (let i = 1; i < points.length; i++) {
-    if (points[i].travel_mode === "walking" && points[i - 1].travel_mode === "walking") {
-      total += haversineKm(
+    const prevKind = travelKindFor(points[i - 1]);
+    const kind = travelKindFor(points[i]);
+    if (prevKind === kind) {
+      totals[kind] += haversineKm(
         { lat: points[i - 1].latitude, lng: points[i - 1].longitude },
         { lat: points[i].latitude, lng: points[i].longitude },
       );
     }
   }
-  return total;
+  return totals;
 }
 
 function createdByLabel(leader: PatrolLeaderRef | null): string {
@@ -104,9 +126,14 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 
 /** Everything below the live map on a patrolling's detail page: timing, distance breakdown, the free-text report, admin-configured custom field answers, and the full incident/case list with photos. */
 export function PatrolDetails({ entry, points }: { entry: Patrolling; points: PatrolRoutePoint[] }) {
-  const walkingKm = walkingDistanceKm(points);
-  const vehicleTotalKm = entry.vehicles.reduce((sum, v) => sum + (v.distance ?? 0), 0);
-  const combinedTotalKm = vehicleTotalKm + walkingKm;
+  const modeTotals = distanceByModeKm(points);
+  const combinedTotalKm = modeTotals.walking + modeTotals["4_wheeler"] + modeTotals.boat + modeTotals.unset;
+  const hasTravel = combinedTotalKm > 0;
+
+  const latLngPoints = points.map((p) => ({ lat: p.latitude, lng: p.longitude }));
+  const areaCovered = points.length >= 3 ? `${areaCoveredKm2(latLngPoints).toFixed(3)} km²` : "—";
+  const areaPatrolled =
+    points.length >= 2 ? `${areaPatrolledKm2(latLngPoints, PATROL_SWATH_WIDTH_KM).toFixed(3)} km²` : "—";
 
   return (
     <div className="space-y-4">
@@ -119,8 +146,8 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
           <Field label="Duration" value={formatDuration(entry.started_at, entry.ended_at)} />
           <Field label="Started At" value={formatDateTime(entry.started_at)} />
           <Field label="Ended At" value={formatDateTime(entry.ended_at)} />
-          <Field label="Area Covered" value={entry.area_covered || "—"} />
-          <Field label="Area Patrolled" value={entry.area_patrolled || "—"} />
+          <Field label="Area Covered" value={areaCovered} />
+          <Field label="Area Patrolled" value={areaPatrolled} />
         </div>
       </Section>
 
@@ -147,60 +174,37 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
       </Section>
 
       <Section title="Distance by Travel Mode">
+        <p className="text-xs text-zinc-400">Computed from the GPS trail, not vehicle odometer readings.</p>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-zinc-200 text-sm">
             <thead>
               <tr className="text-left text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                <th className="py-2 pr-4">Mode / Vehicle</th>
-                <th className="py-2 pr-4">Registration</th>
-                <th className="py-2 pr-4">Odometer</th>
+                <th className="py-2 pr-4">Travel Mode</th>
                 <th className="py-2 pr-4">Distance</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {entry.vehicles.map((v) => (
-                <tr key={v.id}>
-                  <td className="py-2 pr-4 font-medium text-zinc-900">
-                    {VEHICLE_TYPE_LABELS[v.type] ?? v.type}
-                  </td>
-                  <td className="py-2 pr-4 text-zinc-600">{v.registration_no || "—"}</td>
-                  <td className="py-2 pr-4 text-zinc-600">
-                    {v.start_odometer !== null && v.end_odometer !== null
-                      ? `${v.start_odometer.toFixed(1)} → ${v.end_odometer.toFixed(1)} km`
-                      : "—"}
-                  </td>
-                  <td className="py-2 pr-4 font-medium text-zinc-900">
-                    {v.distance !== null ? `${v.distance.toFixed(2)} km` : "—"}
-                  </td>
-                </tr>
-              ))}
-              {walkingKm > 0 && (
+              {(Object.keys(TRAVEL_KIND_LABELS) as TravelKind[])
+                .filter((kind) => modeTotals[kind] > 0)
+                .map((kind) => (
+                  <tr key={kind}>
+                    <td className="py-2 pr-4 font-medium text-zinc-900">{TRAVEL_KIND_LABELS[kind]}</td>
+                    <td className="py-2 pr-4 font-medium text-zinc-900">{modeTotals[kind].toFixed(2)} km</td>
+                  </tr>
+                ))}
+              {!hasTravel && (
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-zinc-900">Walking</td>
-                  <td className="py-2 pr-4 text-zinc-600">—</td>
-                  <td className="py-2 pr-4 text-zinc-600">—</td>
-                  <td className="py-2 pr-4 font-medium text-zinc-900">
-                    {walkingKm.toFixed(2)} km
-                  </td>
-                </tr>
-              )}
-              {entry.vehicles.length === 0 && walkingKm === 0 && (
-                <tr>
-                  <td colSpan={4} className="py-4 text-center text-zinc-400">
+                  <td colSpan={2} className="py-4 text-center text-zinc-400">
                     No travel recorded yet.
                   </td>
                 </tr>
               )}
             </tbody>
-            {(entry.vehicles.length > 0 || walkingKm > 0) && (
+            {hasTravel && (
               <tfoot>
                 <tr className="border-t border-zinc-200">
-                  <td colSpan={3} className="py-2 pr-4 text-right font-semibold text-zinc-900">
-                    Total
-                  </td>
-                  <td className="py-2 pr-4 font-semibold text-zinc-900">
-                    {combinedTotalKm.toFixed(2)} km
-                  </td>
+                  <td className="py-2 pr-4 text-right font-semibold text-zinc-900">Total</td>
+                  <td className="py-2 pr-4 font-semibold text-zinc-900">{combinedTotalKm.toFixed(2)} km</td>
                 </tr>
               </tfoot>
             )}
