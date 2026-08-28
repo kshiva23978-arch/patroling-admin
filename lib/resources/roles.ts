@@ -5,6 +5,7 @@ import {
   ADMIN_SECTIONS,
   APP_FEATURES,
   roleDefaults,
+  type AdminLevel,
   type AdminSection,
   type AppFeature,
   type RoleInput,
@@ -22,6 +23,8 @@ export interface Role {
   status: boolean;
   /** `null` means unrestricted — see backend `Roles::hasAdminPermission`. */
   permissions: RolePermissions | null;
+  /** `null` for a non-admin-table (or unrestricted) role — see `Admin::accessibleRangeIds`. */
+  level: AdminLevel | null;
 }
 
 function toPayload(input: RoleInput) {
@@ -32,6 +35,7 @@ function toPayload(input: RoleInput) {
     ro_permissions: input.restricted
       ? { admin: input.adminPermissions, app: input.appPermissions }
       : null,
+    ro_level: input.level || null,
   };
 }
 
@@ -61,6 +65,7 @@ export function roleToFormValues(role: Role): RoleInput {
     appPermissions: Object.fromEntries(
       APP_FEATURES.map((f) => [f, app?.[f] ?? true]),
     ) as RoleInput["appPermissions"],
+    level: role.level ?? "",
   };
 }
 

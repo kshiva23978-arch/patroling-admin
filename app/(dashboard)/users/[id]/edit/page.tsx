@@ -32,7 +32,8 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
         <ResourceForm
           schemaKey="userUpdateSchema"
           defaultValues={{
-            employeeId: user.employee_id,
+            hasLogin: user.has_login,
+            employeeId: user.employee_id ?? "",
             password: "",
             roleId: user.role ?? "",
             designationId: user.designation ?? "",
@@ -42,7 +43,13 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
           submitLabel="Save Changes"
           cancelHref="/users"
           fields={[
-            { name: "employeeId", label: "Employee ID", type: "text" },
+            {
+              name: "hasLogin",
+              label: "Has App Login",
+              type: "switch",
+              helpText: "Off clears this staff member's login credentials — record-keeping only.",
+            },
+            { name: "employeeId", label: "Employee ID", type: "text", helpText: "Required only when Has App Login is on." },
             {
               name: "password",
               label: "New Password",

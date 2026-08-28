@@ -35,6 +35,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: "Operations",
     items: [
       { href: "/patrollings", label: "Patrollings", section: "patrollings" },
+      { href: "/case-entries", label: "Cases", section: "cases" },
       { href: "/activities", label: "Activities", section: "activities" },
       { href: "/ranges", label: "Ranges", section: "ranges" },
       { href: "/beats", label: "Beats", section: "beats" },

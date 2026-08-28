@@ -21,9 +21,10 @@ function hashPassword(password: string): string {
 
 export interface FieldUser {
   id: string;
-  employee_id: string;
+  employee_id: string | null;
   role: string | null;
   designation: string | null;
+  has_login: boolean;
   status: boolean;
   created_at: string | null;
   updated_at: string | null;
@@ -31,22 +32,25 @@ export interface FieldUser {
 
 function toCreatePayload(input: UserCreateInput) {
   return {
-    u_employee_id: input.employeeId,
-    u_password_hash: hashPassword(input.password),
+    u_has_login: input.hasLogin,
+    u_employee_id: input.hasLogin ? input.employeeId : null,
+    u_password_hash: input.hasLogin ? hashPassword(input.password) : null,
     u_role_id: input.roleId || null,
     u_designation_id: input.designationId || null,
     u_status: input.status,
+    range_id: input.rangeId || undefined,
   };
 }
 
 function toUpdatePayload(input: UserUpdateInput) {
   const payload: Record<string, unknown> = {
-    u_employee_id: input.employeeId,
+    u_has_login: input.hasLogin,
+    u_employee_id: input.hasLogin ? input.employeeId : null,
     u_role_id: input.roleId || null,
     u_designation_id: input.designationId || null,
     u_status: input.status,
   };
-  if (input.password) {
+  if (input.hasLogin && input.password) {
     payload.u_password_hash = hashPassword(input.password);
   }
   return payload;
