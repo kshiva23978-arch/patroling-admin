@@ -120,6 +120,14 @@ export function getCaseEntry(id: string): Promise<CaseEntry> {
 }
 
 /**
+ * Deletes a case outright — its incidents, filings, route history, notes,
+ * and photos all go with it (see backend `AdminCaseEntryController::destroy`).
+ */
+export function deleteCaseEntry(id: string): Promise<void> {
+  return apiFetch<void>(`/admin/case-entries/${id}`, { method: "DELETE" });
+}
+
+/**
  * The case's GPS trail, oldest first. Pass `since` (an ISO timestamp,
  * typically the last point already held client-side) to fetch only newer
  * points instead of the whole trail — what the live-tracking map polls.

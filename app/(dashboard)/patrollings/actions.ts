@@ -1,6 +1,15 @@
 "use server";
 
-import { listActivity, listPatrollings, type ActivityRow, type Patrolling, type PatrolStatus } from "@/lib/resources/patrollings";
+import { revalidatePath } from "next/cache";
+import { toActionResult, type ActionResult } from "@/lib/action-result";
+import {
+  deletePatrolling,
+  listActivity,
+  listPatrollings,
+  type ActivityRow,
+  type Patrolling,
+  type PatrolStatus,
+} from "@/lib/resources/patrollings";
 import type { Paginated } from "@/lib/api-client";
 
 /** Polled from the client-side table every few seconds for a live view. */
@@ -20,4 +29,15 @@ export async function fetchActivityAction(
   rangeId?: string,
 ): Promise<Paginated<ActivityRow>> {
   return listActivity(page, type, status, rangeId);
+}
+
+export async function deletePatrollingAction(id: string): Promise<ActionResult> {
+  try {
+    await deletePatrolling(id);
+  } catch (err) {
+    return toActionResult(err);
+  }
+
+  revalidatePath("/patrollings");
+  return { success: true };
 }

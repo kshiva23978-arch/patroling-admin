@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DataTable, type Column } from "@/components/crud/DataTable";
 import { Pagination } from "@/components/crud/Pagination";
+import { ConfirmDeleteButton } from "@/components/crud/ConfirmDeleteButton";
 import { linkButtonClass } from "@/lib/ui-classes";
 import { patrolStatusBadgeClass, patrolStatusLabel } from "@/lib/patrol-status";
-import { fetchPatrollingsAction } from "./actions";
+import { deletePatrollingAction, fetchPatrollingsAction } from "./actions";
 import type { Paginated } from "@/lib/api-client";
 import type { Patrolling, PatrolStatus } from "@/lib/resources/patrollings";
 
@@ -70,9 +71,29 @@ export function PatrollingsTable({
     {
       header: "Actions",
       render: (p) => (
-        <Link href={`/patrollings/${p.id}`} className={linkButtonClass}>
-          Track
-        </Link>
+        <div className="flex gap-2">
+          <Link href={`/patrollings/${p.id}`} className={linkButtonClass}>
+            Track
+          </Link>
+          <ConfirmDeleteButton
+            action={async () => {
+              const result = await deletePatrollingAction(p.id);
+              if (result.success) {
+                // The poll effect below only runs on an interval — remove the
+                // row immediately so the table doesn't keep showing something
+                // that's already gone for however long is left until the
+                // next tick.
+                setData((prev) => ({
+                  ...prev,
+                  data: prev.data.filter((row) => row.id !== p.id),
+                }));
+              }
+              return result;
+            }}
+            confirmMessage={`Delete patrol "${p.patrol_id}"? This also removes its incidents, case reports, route history, and photos. This cannot be undone.`}
+            successMessage="Patrol deleted."
+          />
+        </div>
       ),
     },
   ];

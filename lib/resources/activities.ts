@@ -88,3 +88,11 @@ export async function getActivity(id: string): Promise<Activity> {
   const activity = await apiFetch<Activity>(`/admin/activities/${id}`);
   return normalizeActivity(activity);
 }
+
+/**
+ * Deletes an activity outright — its participants and photos go with it
+ * (see backend `AdminActivityController::destroy`).
+ */
+export function deleteActivity(id: string): Promise<void> {
+  return apiFetch<void>(`/admin/activities/${id}`, { method: "DELETE" });
+}

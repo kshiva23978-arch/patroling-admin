@@ -2,8 +2,10 @@ import Link from "next/link";
 import { listCaseEntries, type CaseStatus } from "@/lib/resources/case-entries";
 import { listAllRanges } from "@/lib/resources/ranges";
 import { Pagination } from "@/components/crud/Pagination";
+import { ConfirmDeleteButton } from "@/components/crud/ConfirmDeleteButton";
 import { badgeClass, cardClass } from "@/lib/ui-classes";
 import { RangeFilter } from "./range-filter";
+import { deleteCaseEntryAction } from "./actions";
 
 const STATUS_TABS: { value: CaseStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -66,12 +68,13 @@ export default async function CaseEntriesPage({
               <th className="px-4 py-2">Beat</th>
               <th className="px-4 py-2">Leader</th>
               <th className="px-4 py-2">Date</th>
+              <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
             {listing.data.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-zinc-500">
+                <td colSpan={7} className="px-4 py-6 text-center text-zinc-500">
                   No cases found.
                 </td>
               </tr>
@@ -90,6 +93,13 @@ export default async function CaseEntriesPage({
                 <td className="px-4 py-2">{c.beat?.name ?? "—"}</td>
                 <td className="px-4 py-2">{c.leader?.name ?? c.leader?.employee_id ?? "—"}</td>
                 <td className="px-4 py-2">{c.date ?? "—"}</td>
+                <td className="px-4 py-2">
+                  <ConfirmDeleteButton
+                    action={deleteCaseEntryAction.bind(null, c.id)}
+                    confirmMessage={`Delete case "${c.case_number}"? This also removes its incidents, filings, route history, and photos. This cannot be undone.`}
+                    successMessage="Case deleted."
+                  />
+                </td>
               </tr>
             ))}
           </tbody>

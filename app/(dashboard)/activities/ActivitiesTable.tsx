@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { DataTable, type Column } from "@/components/crud/DataTable";
 import { Pagination } from "@/components/crud/Pagination";
+import { ConfirmDeleteButton } from "@/components/crud/ConfirmDeleteButton";
 import { linkButtonClass, badgeClass } from "@/lib/ui-classes";
 import type { Activity, ActivityStatus } from "@/lib/resources/activities";
 import type { Paginated } from "@/lib/api-client";
+import { deleteActivityAction } from "./actions";
 
 export function ActivitiesTable({
   data,
@@ -49,9 +51,16 @@ export function ActivitiesTable({
     {
       header: "Actions",
       render: (a) => (
-        <Link href={`/activities/${a.id}`} className={linkButtonClass}>
-          View
-        </Link>
+        <div className="flex gap-2">
+          <Link href={`/activities/${a.id}`} className={linkButtonClass}>
+            View
+          </Link>
+          <ConfirmDeleteButton
+            action={deleteActivityAction.bind(null, a.id)}
+            confirmMessage={`Delete activity "${a.name}"? This also removes its participants and photos. This cannot be undone.`}
+            successMessage="Activity deleted."
+          />
+        </div>
       ),
     },
   ];

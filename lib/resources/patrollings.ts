@@ -214,6 +214,15 @@ export async function getPatrolling(id: string): Promise<Patrolling> {
 }
 
 /**
+ * Deletes a patrol entry outright — its incidents, case reports, route
+ * history, and photos all go with it (see backend
+ * `AdminPatrolEntryController::destroy`).
+ */
+export function deletePatrolling(id: string): Promise<void> {
+  return apiFetch<void>(`/admin/patrol-entries/${id}`, { method: "DELETE" });
+}
+
+/**
  * The entry's GPS trail, oldest first. Pass `since` (an ISO timestamp,
  * typically the last point already held client-side) to fetch only newer
  * points instead of the whole trail — what the live-tracking map polls.
