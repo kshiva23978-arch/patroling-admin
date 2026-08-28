@@ -28,6 +28,7 @@ import { designationSchema, type DesignationInput } from "@/lib/schemas/designat
 import { patrolTypeSchema, type PatrolTypeInput } from "@/lib/schemas/patrol-types";
 import { patrollingModeSchema, type PatrollingModeInput } from "@/lib/schemas/patrolling-modes";
 import { rangeSchema, type RangeInput } from "@/lib/schemas/ranges";
+import { staffCreateSchema, staffUpdateSchema, type StaffCreateInput, type StaffUpdateInput } from "@/lib/schemas/staff";
 import {
   ADMIN_SECTIONS,
   ADMIN_SECTION_LABELS,
@@ -56,6 +57,8 @@ const schemaRegistry = {
   patrollingModeSchema,
   rangeSchema,
   roleSchema,
+  staffCreateSchema,
+  staffUpdateSchema,
   userDetailsSchema,
   userCreateSchema,
   userUpdateSchema,
@@ -73,6 +76,8 @@ interface SchemaKeyMap {
   patrollingModeSchema: PatrollingModeInput;
   rangeSchema: RangeInput;
   roleSchema: RoleInput;
+  staffCreateSchema: StaffCreateInput;
+  staffUpdateSchema: StaffUpdateInput;
   userDetailsSchema: UserDetailsInput;
   userCreateSchema: UserCreateInput;
   userUpdateSchema: UserUpdateInput;

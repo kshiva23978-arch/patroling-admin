@@ -108,7 +108,10 @@ export interface PatrolRoutePoint {
   latitude: number;
   longitude: number;
   travel_mode: "walking" | "vehicle" | null;
-  vehicle_type: "4_wheeler" | "boat" | null;
+  // Backend allows "2_wheeler" too (not just "4_wheeler"/"boat") — kept as
+  // `string` rather than a narrower literal union so this type also covers
+  // `CaseRoutePoint` (Case module vehicles) passed into the shared `LiveMap`.
+  vehicle_type: string | null;
   recorded_at: string;
 }
 

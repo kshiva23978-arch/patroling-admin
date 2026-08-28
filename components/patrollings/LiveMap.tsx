@@ -292,7 +292,7 @@ function photoStripHtml(photos: { id: string }[], baseUrl: string): string {
   return `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">${thumbs}</div>`;
 }
 
-function buildIncidentInfoContent(incident: PatrolIncidentRef): string {
+function buildIncidentInfoContent(incident: PatrolIncidentRef, mediaBaseUrl: string): string {
   return `
     <div style="min-width:220px;max-width:270px;padding:2px 2px 4px;font-family:ui-sans-serif,system-ui,sans-serif;">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
@@ -302,12 +302,12 @@ function buildIncidentInfoContent(incident: PatrolIncidentRef): string {
       <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px;">${escapeHtml(incident.name)}</div>
       <div style="font-size:12px;color:#3f3f46;margin-bottom:6px;">${escapeHtml(incident.details)}</div>
       <div style="font-size:11px;color:#71717a;">${formatDateTime(incident.reported_at)}</div>
-      ${photoStripHtml(incident.photos, "/api/incident-media")}
+      ${photoStripHtml(incident.photos, mediaBaseUrl)}
     </div>
   `;
 }
 
-function buildCaseInfoContent(caseReport: PatrolCaseRef): string {
+function buildCaseInfoContent(caseReport: PatrolCaseRef, mediaBaseUrl: string): string {
   const rescueLabel =
     caseReport.rescue_conducted === null ? "—" : caseReport.rescue_conducted ? "Yes" : "No";
 
@@ -323,7 +323,7 @@ function buildCaseInfoContent(caseReport: PatrolCaseRef): string {
         ${statBlock("Rescue", rescueLabel)}
         ${statBlock("Reported", formatDateTime(caseReport.reported_at))}
       </div>
-      ${photoStripHtml(caseReport.photos, "/api/case-media")}
+      ${photoStripHtml(caseReport.photos, mediaBaseUrl)}
     </div>
   `;
 }
@@ -353,10 +353,16 @@ export function LiveMap({
   points,
   incidents,
   caseReports,
+  incidentMediaBaseUrl = "/api/incident-media",
+  caseMediaBaseUrl = "/api/case-media",
 }: {
   points: PatrolRoutePoint[];
   incidents: PatrolIncidentRef[];
   caseReports: PatrolCaseRef[];
+  /** Where an incident flag's photo strip resolves photo ids against — defaults to the Patrol module's proxy route. */
+  incidentMediaBaseUrl?: string;
+  /** Where a case flag's photo strip resolves photo ids against — defaults to the Patrol module's proxy route. */
+  caseMediaBaseUrl?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -493,7 +499,7 @@ export function LiveMap({
         icon: buildFlagIcon("#eab308"),
         zIndexOffset: 1000,
       }).addTo(mapRef.current!);
-      marker.bindPopup(buildIncidentInfoContent(incident));
+      marker.bindPopup(buildIncidentInfoContent(incident, incidentMediaBaseUrl));
       flagMarkers.push(marker);
     });
 
@@ -505,12 +511,12 @@ export function LiveMap({
         icon: buildFlagIcon("#dc2626"),
         zIndexOffset: 1001,
       }).addTo(mapRef.current!);
-      marker.bindPopup(buildCaseInfoContent(caseReport));
+      marker.bindPopup(buildCaseInfoContent(caseReport, caseMediaBaseUrl));
       flagMarkers.push(marker);
     });
 
     flagMarkersRef.current = flagMarkers;
-  }, [incidents, caseReports, ready]);
+  }, [incidents, caseReports, ready, incidentMediaBaseUrl, caseMediaBaseUrl]);
 
   if (points.length === 0) {
     return (

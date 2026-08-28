@@ -41,6 +41,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/ranges", label: "Ranges", section: "ranges" },
       { href: "/beats", label: "Beats", section: "beats" },
       { href: "/vehicles", label: "Vehicles", section: "vehicles" },
+      { href: "/staff", label: "Staff", section: "staff" },
     ],
   },
   {
@@ -48,7 +49,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/admins", label: "Admins", section: "admins" },
       { href: "/users", label: "Field Users", section: "users" },
-      { href: "/user-details", label: "User Details", section: "user_details" },
     ],
   },
 ];
