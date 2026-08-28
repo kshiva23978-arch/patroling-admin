@@ -43,6 +43,37 @@ function throttledFetch(url: string): Promise<Response> {
   return run;
 }
 
+// A gap this long between two consecutive recorded points is treated as
+// "still catching up on an offline backlog" rather than normal travel — the
+// trail breaks here instead of drawing a straight (or road-snapped) line
+// across however far the ranger travelled while offline. Once the missing
+// in-between points sync in, they land between the two on the next fetch
+// and the segments merge back into one on their own — nothing here tracks
+// or reconciles segments explicitly. Matches the Flutter app's own trail
+// view (`patrol_map_tab.dart`'s `_trailGapThreshold`).
+const TRAIL_GAP_THRESHOLD_MS = 10 * 60 * 1000;
+
+/** Splits the trail into runs with no unusually large time gap between
+ * consecutive points, so each run can be drawn as its own polyline. */
+function splitByGap(points: PatrolRoutePoint[]): PatrolRoutePoint[][] {
+  const segments: PatrolRoutePoint[][] = [];
+  let current: PatrolRoutePoint[] = [];
+
+  for (const point of points) {
+    const previous = current.at(-1);
+    if (previous) {
+      const gap = new Date(point.recorded_at).getTime() - new Date(previous.recorded_at).getTime();
+      if (gap > TRAIL_GAP_THRESHOLD_MS) {
+        segments.push(current);
+        current = [];
+      }
+    }
+    current.push(point);
+  }
+  if (current.length > 0) segments.push(current);
+  return segments;
+}
+
 function osrmModeFor(point: PatrolRoutePoint): "driving" | null {
   return markerKindFor(point) === "car" ? "driving" : null;
 }
@@ -109,18 +140,21 @@ async function snapRunToRoads(
  * fails for) as straight lines between the raw points. `cache` holds
  * resolved runs keyed by their position in the trail so that, as new points
  * arrive, only the still-growing final run is re-requested — closed runs
- * earlier in the trail are never re-fetched.
+ * earlier in the trail are never re-fetched. `keyPrefix` scopes those cache
+ * keys to one gap-free trail segment (see [splitByGap]) so two different
+ * segments never collide on the same relative position/length.
  */
 async function buildSnappedPath(
   points: PatrolRoutePoint[],
   cache: Map<string, L.LatLngTuple[]>,
+  keyPrefix: string,
 ): Promise<L.LatLngTuple[]> {
   const groups = groupByMode(points);
   const path: L.LatLngTuple[] = [];
   let index = 0;
 
   for (const group of groups) {
-    const key = `${group.mode ?? "line"}:${index}:${group.points.length}`;
+    const key = `${keyPrefix}:${group.mode ?? "line"}:${index}:${group.points.length}`;
     index += group.points.length;
 
     let segment = cache.get(key);
@@ -326,8 +360,10 @@ export function LiveMap({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const polylineRef = useRef<L.Polyline | null>(null);
-  const polylineCasingRef = useRef<L.Polyline | null>(null);
+  // One casing+line pair per gap-free trail segment (see [splitByGap]) —
+  // rebuilt whenever the segment boundaries change so a sync gap shows as a
+  // visible break rather than one continuous line jumping across it.
+  const segmentLinesRef = useRef<{ casing: L.Polyline; line: L.Polyline }[]>([]);
   const snappedSegmentCacheRef = useRef<Map<string, L.LatLngTuple[]>>(new Map());
   const startMarkerRef = useRef<L.Marker | null>(null);
   const endMarkerRef = useRef<L.Marker | null>(null);
@@ -350,18 +386,13 @@ export function LiveMap({
       maxZoom: 19,
     }).addTo(map);
 
-    // Google Maps-style route: a slightly wider dark casing under a yellow
-    // line, giving the path an outlined look instead of a flat stroke.
-    polylineCasingRef.current = L.polyline([], { color: "#8a6d00", weight: 7, opacity: 0.9 }).addTo(map);
-    polylineRef.current = L.polyline([], { color: "#fbbc04", weight: 5 }).addTo(map);
     mapRef.current = map;
     setReady(true);
 
     return () => {
       map.remove();
       mapRef.current = null;
-      polylineRef.current = null;
-      polylineCasingRef.current = null;
+      segmentLinesRef.current = [];
       startMarkerRef.current = null;
       endMarkerRef.current = null;
       modeChangeMarkersRef.current = [];
@@ -372,13 +403,30 @@ export function LiveMap({
   }, []);
 
   useEffect(() => {
-    if (!ready || !mapRef.current || !polylineRef.current || !polylineCasingRef.current) return;
+    if (!ready || !mapRef.current) return;
 
     let cancelled = false;
-    buildSnappedPath(points, snappedSegmentCacheRef.current).then((path) => {
-      if (cancelled) return;
-      polylineCasingRef.current!.setLatLngs(path);
-      polylineRef.current!.setLatLngs(path);
+    const segments = splitByGap(points);
+    Promise.all(
+      segments.map((segment, i) =>
+        buildSnappedPath(segment, snappedSegmentCacheRef.current, `seg${i}`),
+      ),
+    ).then((paths) => {
+      if (cancelled || !mapRef.current) return;
+
+      segmentLinesRef.current.forEach(({ casing, line }) => {
+        casing.remove();
+        line.remove();
+      });
+
+      // Google Maps-style route: a slightly wider dark casing under a
+      // yellow line, giving the path an outlined look instead of a flat
+      // stroke — one such pair per gap-free segment.
+      segmentLinesRef.current = paths.map((path) => {
+        const casing = L.polyline(path, { color: "#8a6d00", weight: 7, opacity: 0.9 }).addTo(mapRef.current!);
+        const line = L.polyline(path, { color: "#fbbc04", weight: 5 }).addTo(mapRef.current!);
+        return { casing, line };
+      });
     });
 
     startMarkerRef.current?.remove();
