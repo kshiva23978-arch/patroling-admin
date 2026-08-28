@@ -9,7 +9,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full overflow-hidden">
-        <Sidebar permissions={admin.permissions} />
+        <Sidebar permissions={admin.permissions} isMasterAdmin={admin.is_master_admin} />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar admin={admin} />
           <main className="flex-1 overflow-y-auto bg-green-50 p-3 sm:p-6">{children}</main>

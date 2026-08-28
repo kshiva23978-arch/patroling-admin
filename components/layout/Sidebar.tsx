@@ -10,6 +10,14 @@ interface NavItem {
   label: string;
   /** Matches a backend `Roles::ADMIN_SECTIONS` key — gates visibility. */
   section: string;
+  /**
+   * Reserved for a Master Admin (System Administrator) regardless of
+   * `permissions` — see backend `EnsureMasterAdmin`. Granting Roles/
+   * Designations to a Department Admin/Ranger role would itself be a
+   * privilege-escalation risk, so this can't be turned on by ticking a
+   * permission checkbox.
+   */
+  masterOnly?: boolean;
 }
 
 interface NavGroup {
@@ -25,8 +33,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: "Reference data",
     items: [
-      { href: "/roles", label: "Roles", section: "roles" },
-      { href: "/designations", label: "Designations", section: "designations" },
+      { href: "/roles", label: "Roles", section: "roles", masterOnly: true },
+      { href: "/designations", label: "Designations", section: "designations", masterOnly: true },
       { href: "/patrolling-modes", label: "Patrolling Modes", section: "patrolling_modes" },
       { href: "/patrol-types", label: "Patrol Types", section: "patrol_types" },
       { href: "/custom-fields", label: "Custom Fields", section: "custom_fields" },
@@ -53,7 +61,13 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-export function Sidebar({ permissions }: { permissions: AdminPermissions }) {
+export function Sidebar({
+  permissions,
+  isMasterAdmin,
+}: {
+  permissions: AdminPermissions;
+  isMasterAdmin: boolean;
+}) {
   const pathname = usePathname();
   const { mobileOpen, collapsed, closeMobile } = useSidebar();
 
@@ -85,8 +99,10 @@ export function Sidebar({ permissions }: { permissions: AdminPermissions }) {
           </button>
         </div>
         {NAV_GROUPS.map((group) => {
-          const items = group.items.filter((item) =>
-            hasAdminPermission({ permissions }, item.section, "view"),
+          const items = group.items.filter(
+            (item) =>
+              (!item.masterOnly || isMasterAdmin) &&
+              hasAdminPermission({ permissions }, item.section, "view"),
           );
           if (items.length === 0) return null;
 

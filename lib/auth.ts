@@ -18,6 +18,8 @@ export interface AdminIdentity {
   a_created_at: string | null;
   a_updated_at: string | null;
   permissions: AdminPermissions;
+  /** See backend `Admin::isMasterAdmin` — gates Roles/Designations regardless of `permissions`. */
+  is_master_admin: boolean;
 }
 
 /**
@@ -54,6 +56,21 @@ export async function requirePermission(
   const admin = await requireAdmin();
   if (!hasAdminPermission(admin, section, level)) {
     redirect("/dashboard?denied=" + encodeURIComponent(section));
+  }
+  return admin;
+}
+
+/**
+ * Use at the top of Roles/Designations pages/layouts — these are reserved
+ * for a Master Admin (System Administrator) regardless of `permissions`,
+ * since granting them to a Department Admin/Ranger role would itself be a
+ * privilege-escalation risk (see backend `EnsureMasterAdmin`). Combines
+ * [requireAdmin]'s login check, so a page/layout only needs this one call.
+ */
+export async function requireMasterAdmin(): Promise<AdminIdentity> {
+  const admin = await requireAdmin();
+  if (!admin.is_master_admin) {
+    redirect("/dashboard?denied=master_admin");
   }
   return admin;
 }

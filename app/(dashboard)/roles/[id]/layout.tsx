@@ -1,6 +1,6 @@
-import { requirePermission } from "@/lib/auth";
+import { requireMasterAdmin } from "@/lib/auth";
 
 export default async function RolesEditLayout({ children }: { children: React.ReactNode }) {
-  await requirePermission("roles", "manage");
+  await requireMasterAdmin();
   return <>{children}</>;
 }

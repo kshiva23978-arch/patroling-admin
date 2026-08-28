@@ -1,6 +1,6 @@
-import { requirePermission } from "@/lib/auth";
+import { requireMasterAdmin } from "@/lib/auth";
 
 export default async function DesignationsEditLayout({ children }: { children: React.ReactNode }) {
-  await requirePermission("designations", "manage");
+  await requireMasterAdmin();
   return <>{children}</>;
 }
