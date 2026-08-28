@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { hasAdminPermission, type AdminPermissions } from "@/lib/auth";
+import { hasAdminPermission, type AdminPermissions } from "@/lib/permissions";
 
 interface NavItem {
   href: string;

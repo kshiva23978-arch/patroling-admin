@@ -3,19 +3,10 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { fetchRawUser } from "./api-client";
+import { hasAdminPermission, type AdminPermissions } from "./permissions";
 
-/** One admin-panel section's permissions — see backend `Roles::ADMIN_SECTIONS`. */
-export interface AdminSectionPermission {
-  view?: boolean;
-  manage?: boolean;
-}
-
-/**
- * Keyed by section (e.g. `"beats"`, `"roles"`) — `null` (the whole map, not
- * a missing key) means this admin's role is unrestricted, same as a role
- * with no permissions configured at all. See backend `Roles::hasAdminPermission`.
- */
-export type AdminPermissions = Record<string, AdminSectionPermission> | null;
+export type { AdminPermissions, AdminSectionPermission } from "./permissions";
+export { hasAdminPermission } from "./permissions";
 
 export interface AdminIdentity {
   a_id: string;
@@ -48,22 +39,6 @@ export async function requireAdmin(): Promise<AdminIdentity> {
     redirect("/login");
   }
   return admin;
-}
-
-/**
- * `true` if [admin] is allowed [level] access to [section] — `permissions
- * === null` means unrestricted (no role, or a role with no permissions
- * configured), matching the backend's default-to-full-access rule so a
- * fresh install (or any account nobody has bothered restricting yet) never
- * looks locked out.
- */
-export function hasAdminPermission(
-  admin: Pick<AdminIdentity, "permissions">,
-  section: string,
-  level: "view" | "manage" = "view",
-): boolean {
-  if (admin.permissions === null) return true;
-  return Boolean(admin.permissions[section]?.[level]);
 }
 
 /**
