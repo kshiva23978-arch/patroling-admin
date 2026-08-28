@@ -74,7 +74,7 @@ function formatDuration(startedAt: string | null, endedAt: string | null): strin
 function locationLabel(location: { latitude: number | null; longitude: number | null; address: string | null }): string {
   if (location.address) return location.address;
   if (location.latitude !== null && location.longitude !== null) {
-    return `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`;
+    return `${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}`;
   }
   return "No location recorded";
 }
@@ -169,13 +169,13 @@ export function CaseDetails({ entry, points }: { entry: CaseEntry; points: CaseR
                     </td>
                     <td className="py-2 pr-4 text-zinc-600">{v.registration_no || "—"}</td>
                     <td className="py-2 pr-4 text-zinc-600">
-                      {v.start_odometer !== null ? `${v.start_odometer.toFixed(1)} km` : "—"}
+                      {v.start_odometer !== null ? `${Number(v.start_odometer).toFixed(1)} km` : "—"}
                     </td>
                     <td className="py-2 pr-4 text-zinc-600">
-                      {v.end_odometer !== null ? `${v.end_odometer.toFixed(1)} km` : "—"}
+                      {v.end_odometer !== null ? `${Number(v.end_odometer).toFixed(1)} km` : "—"}
                     </td>
                     <td className="py-2 pr-4 text-zinc-600">
-                      {v.distance !== null ? `${v.distance.toFixed(2)} km` : "—"}
+                      {v.distance !== null ? `${Number(v.distance).toFixed(2)} km` : "—"}
                     </td>
                   </tr>
                 ))}

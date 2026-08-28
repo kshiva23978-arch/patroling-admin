@@ -201,10 +201,10 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
                     </td>
                     <td className="py-2 pr-4 text-zinc-600">{v.registration_no || "—"}</td>
                     <td className="py-2 pr-4 text-zinc-600">
-                      {v.start_odometer !== null ? `${v.start_odometer.toFixed(1)} km` : "—"}
+                      {v.start_odometer !== null ? `${Number(v.start_odometer).toFixed(1)} km` : "—"}
                     </td>
                     <td className="py-2 pr-4 text-zinc-600">
-                      {v.end_odometer !== null ? `${v.end_odometer.toFixed(1)} km` : "—"}
+                      {v.end_odometer !== null ? `${Number(v.end_odometer).toFixed(1)} km` : "—"}
                     </td>
                   </tr>
                 ))}
@@ -293,7 +293,7 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
                 <p className="text-xs text-zinc-500">
                   {incident.location.address ||
                     (incident.location.latitude !== null
-                      ? `${incident.location.latitude.toFixed(5)}, ${incident.location.longitude?.toFixed(5)}`
+                      ? `${Number(incident.location.latitude).toFixed(5)}, ${Number(incident.location.longitude).toFixed(5)}`
                       : "No location recorded")}
                 </p>
                 <PhotoGrid items={incident.photos} baseUrl="/api/incident-media" />
@@ -339,7 +339,7 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
                 <p className="text-xs text-zinc-500">
                   {caseReport.location.address ||
                     (caseReport.location.latitude !== null
-                      ? `${caseReport.location.latitude.toFixed(5)}, ${caseReport.location.longitude?.toFixed(5)}`
+                      ? `${Number(caseReport.location.latitude).toFixed(5)}, ${Number(caseReport.location.longitude).toFixed(5)}`
                       : "No location recorded")}
                 </p>
                 <PhotoGrid items={caseReport.photos} baseUrl="/api/case-media" />
