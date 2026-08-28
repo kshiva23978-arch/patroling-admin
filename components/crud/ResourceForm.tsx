@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useForm, type FieldValues, type Path, type Resolver } from "react-hook-form";
+import {
+  useForm,
+  type FieldValues,
+  type Path,
+  type Resolver,
+  type UseFormRegister,
+  type UseFormWatch,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ZodType } from "zod";
 import { useRouter } from "next/navigation";
@@ -21,7 +28,14 @@ import { designationSchema, type DesignationInput } from "@/lib/schemas/designat
 import { patrolTypeSchema, type PatrolTypeInput } from "@/lib/schemas/patrol-types";
 import { patrollingModeSchema, type PatrollingModeInput } from "@/lib/schemas/patrolling-modes";
 import { rangeSchema, type RangeInput } from "@/lib/schemas/ranges";
-import { roleSchema, type RoleInput } from "@/lib/schemas/roles";
+import {
+  ADMIN_SECTIONS,
+  ADMIN_SECTION_LABELS,
+  APP_FEATURES,
+  APP_FEATURE_LABELS,
+  roleSchema,
+  type RoleInput,
+} from "@/lib/schemas/roles";
 import { userDetailsSchema, type UserDetailsInput } from "@/lib/schemas/user-details";
 import { userCreateSchema, userUpdateSchema, type UserCreateInput, type UserUpdateInput } from "@/lib/schemas/users";
 import { vehicleCreateSchema, vehicleUpdateSchema, type VehicleCreateInput, type VehicleUpdateInput } from "@/lib/schemas/vehicles";
@@ -70,7 +84,15 @@ export type SchemaKey = keyof SchemaKeyMap;
 
 export type SelectOption = { value: string; label: string };
 
-export type FieldType = "text" | "password" | "number" | "textarea" | "select" | "multiselect" | "switch";
+export type FieldType =
+  | "text"
+  | "password"
+  | "number"
+  | "textarea"
+  | "select"
+  | "multiselect"
+  | "switch"
+  | "permissions";
 
 export interface FieldConfig<TFieldValues extends FieldValues> {
   name: Path<TFieldValues>;
@@ -115,6 +137,7 @@ export function ResourceForm<K extends SchemaKey>({
     register,
     handleSubmit,
     setError,
+    watch,
     formState: { errors },
   } = useForm<TFieldValues>({
     // Generic zod<->react-hook-form wiring loses precise inference across a
@@ -153,6 +176,17 @@ export function ResourceForm<K extends SchemaKey>({
       {fields.map((field) => {
         const fieldError = (errors as Record<string, { message?: string } | undefined>)[field.name]?.message;
         const fieldId = String(field.name);
+
+        if (field.type === "permissions") {
+          return (
+            <RolePermissionsFields
+              key={fieldId}
+              register={register as unknown as UseFormRegister<RoleInput>}
+              watch={watch as unknown as UseFormWatch<RoleInput>}
+              disabled={isPending}
+            />
+          );
+        }
 
         return (
           <div key={fieldId} className="space-y-1">
@@ -240,5 +274,106 @@ export function ResourceForm<K extends SchemaKey>({
         </button>
       </div>
     </form>
+  );
+}
+
+/**
+ * A role's permission grid — a "Restrict this role" toggle gating a table of
+ * View/Manage checkboxes per admin-panel section, plus one checkbox per
+ * app-side feature. Off means unrestricted (full access — the default for
+ * every role until explicitly restricted; see backend
+ * `Roles::hasAdminPermission`/`hasAppFeature`), matching how `roleDefaults`/
+ * `roleToFormValues` populate the form either way. Only ever used by the
+ * Roles form (see the `roleSchema` cast at its call site), so it's typed
+ * directly against `RoleInput` rather than threaded through `ResourceForm`'s
+ * generic `TFieldValues`.
+ */
+function RolePermissionsFields({
+  register,
+  watch,
+  disabled,
+}: {
+  register: UseFormRegister<RoleInput>;
+  watch: UseFormWatch<RoleInput>;
+  disabled: boolean;
+}) {
+  const restricted = watch("restricted");
+
+  return (
+    <div className="space-y-3 rounded-md border border-zinc-200 p-3">
+      <label htmlFor="restricted" className="flex items-center gap-2">
+        <input
+          id="restricted"
+          type="checkbox"
+          disabled={disabled}
+          className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500"
+          {...register("restricted")}
+        />
+        <span className={labelClass}>Restrict this role&apos;s permissions</span>
+      </label>
+      <p className={helpTextClass}>
+        Off: full access to every admin section and app feature (today&apos;s default for every role).
+        On: only what&apos;s checked below.
+      </p>
+
+      {restricted && (
+        <div className="space-y-4 border-t border-zinc-200 pt-3">
+          <div>
+            <p className={`${labelClass} mb-2`}>Admin panel sections</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-zinc-500">
+                    <th className="py-1 pr-2 font-medium">Section</th>
+                    <th className="py-1 pr-2 font-medium">View</th>
+                    <th className="py-1 pr-2 font-medium">Manage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ADMIN_SECTIONS.map((section) => (
+                    <tr key={section} className="border-t border-zinc-100">
+                      <td className="py-1 pr-2 text-zinc-800">{ADMIN_SECTION_LABELS[section]}</td>
+                      <td className="py-1 pr-2">
+                        <input
+                          type="checkbox"
+                          disabled={disabled}
+                          className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500"
+                          {...register(`adminPermissions.${section}.view`)}
+                        />
+                      </td>
+                      <td className="py-1 pr-2">
+                        <input
+                          type="checkbox"
+                          disabled={disabled}
+                          className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500"
+                          {...register(`adminPermissions.${section}.manage`)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <p className={`${labelClass} mb-2`}>App (ranger) features</p>
+            <div className="space-y-1">
+              {APP_FEATURES.map((feature) => (
+                <label key={feature} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    disabled={disabled}
+                    className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500"
+                    {...register(`appPermissions.${feature}`)}
+                  />
+                  <span className="text-sm text-zinc-800">{APP_FEATURE_LABELS[feature]}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

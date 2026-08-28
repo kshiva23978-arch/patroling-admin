@@ -16,6 +16,7 @@ export default function NewRolePage() {
           { name: "name", label: "Name", type: "text" },
           { name: "description", label: "Description", type: "textarea" },
           { name: "status", label: "Active", type: "switch" },
+          { name: "restricted", label: "Permissions", type: "permissions" },
         ]}
       />
     </div>

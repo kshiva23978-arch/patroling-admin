@@ -1,5 +1,5 @@
 import { ResourceForm } from "@/components/crud/ResourceForm";
-import { getRole } from "@/lib/resources/roles";
+import { getRole, roleToFormValues } from "@/lib/resources/roles";
 import { updateRoleAction } from "../../actions";
 
 export default async function EditRolePage({ params }: { params: Promise<{ id: string }> }) {
@@ -11,7 +11,7 @@ export default async function EditRolePage({ params }: { params: Promise<{ id: s
       <h1 className="text-xl font-semibold text-zinc-900">Edit Role</h1>
       <ResourceForm
         schemaKey="roleSchema"
-        defaultValues={{ name: role.name, description: role.description ?? "", status: role.status }}
+        defaultValues={roleToFormValues(role)}
         action={updateRoleAction.bind(null, id)}
         submitLabel="Save Changes"
         cancelHref="/roles"
@@ -19,6 +19,7 @@ export default async function EditRolePage({ params }: { params: Promise<{ id: s
           { name: "name", label: "Name", type: "text" },
           { name: "description", label: "Description", type: "textarea" },
           { name: "status", label: "Active", type: "switch" },
+          { name: "restricted", label: "Permissions", type: "permissions" },
         ]}
       />
     </div>
