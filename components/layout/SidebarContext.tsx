@@ -1,35 +1,46 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 interface SidebarContextValue {
-  open: boolean;
+  /** Mobile off-canvas drawer — only touched by explicit user action (the toggle button, the backdrop, or tapping a nav link), never automatically. */
+  mobileOpen: boolean;
+  /** Desktop inline collapse — only touched by the toggle button; navigating never changes it. */
+  collapsed: boolean;
+  /** Toggles whichever of the two applies at the current viewport width. */
   toggle: () => void;
-  close: () => void;
+  /** Closes the mobile drawer only — used by the backdrop and nav-link taps, so it never touches the desktop collapse state. */
+  closeMobile: () => void;
 }
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
 
 /**
- * One `open` flag drives both responsive behaviors of the sidebar: on
- * mobile it's an off-canvas drawer (`open` slides it in over the content,
- * with a backdrop), on desktop it's an inline collapse (`open` sets its
- * width back to normal, `false` shrinks it to 0 so the content area grows).
- * Defaults to `true` to match server-rendered markup exactly (avoids a
- * hydration mismatch); corrected to `false` right after mount on a narrow
- * viewport so a phone doesn't load with the drawer covering the screen.
+ * Two independent flags, each changed only by a deliberate user action —
+ * no effect anywhere flips either one automatically (not on navigation,
+ * not on resize, not on mount). `mobileOpen` starts closed (a drawer
+ * shouldn't cover the screen on load) and `collapsed` starts open (a
+ * desktop admin panel should show its nav by default); both are plain
+ * component state from then on, so once you open it it stays open, and
+ * once you close it it stays closed, until you toggle it yourself.
  */
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
-  useEffect(() => {
-    if (window.matchMedia("(max-width: 767px)").matches) {
-      setOpen(false);
+  const toggle = () => {
+    const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+    if (isMobile) {
+      setMobileOpen((v) => !v);
+    } else {
+      setCollapsed((v) => !v);
     }
-  }, []);
+  };
 
   return (
-    <SidebarContext.Provider value={{ open, toggle: () => setOpen((v) => !v), close: () => setOpen(false) }}>
+    <SidebarContext.Provider
+      value={{ mobileOpen, collapsed, toggle, closeMobile: () => setMobileOpen(false) }}
+    >
       {children}
     </SidebarContext.Provider>
   );

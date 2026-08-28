@@ -226,7 +226,6 @@ export function CaseDetails({ entry, points }: { entry: CaseEntry; points: CaseR
 
       <Section title="Closing Report">
         <p className="whitespace-pre-wrap text-sm text-zinc-700">{entry.report || "No report submitted."}</p>
-        <PhotoGrid items={entry.closing_photos} baseUrl="/api/case-closing-media" emptyMessage="No closing photos." />
       </Section>
 
       {entry.notes.length > 0 && (

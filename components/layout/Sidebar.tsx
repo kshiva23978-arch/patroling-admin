@@ -55,29 +55,29 @@ const NAV_GROUPS: NavGroup[] = [
 
 export function Sidebar({ permissions }: { permissions: AdminPermissions }) {
   const pathname = usePathname();
-  const { open, close } = useSidebar();
+  const { mobileOpen, collapsed, closeMobile } = useSidebar();
 
   return (
     <>
       {/* Backdrop — mobile only, closes the drawer on tap outside it. */}
-      {open && (
+      {mobileOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/40 md:hidden"
-          onClick={close}
+          onClick={closeMobile}
           aria-hidden="true"
         />
       )}
 
       <nav
         className={`fixed inset-y-0 left-0 z-40 flex h-full w-64 shrink-0 flex-col gap-6 overflow-y-auto border-r border-green-950 bg-green-900 px-4 py-6 transition-transform duration-200 ease-in-out md:static md:translate-x-0 md:transition-[width,padding] ${
-          open ? "translate-x-0" : "-translate-x-full"
-        } ${open ? "md:w-60 md:px-4" : "md:w-0 md:overflow-hidden md:border-0 md:px-0"}`}
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        } ${collapsed ? "md:w-0 md:overflow-hidden md:border-0 md:px-0" : "md:w-60 md:px-4"}`}
       >
         <div className="flex items-center justify-between px-2">
           <span className="whitespace-nowrap text-base font-semibold text-white">Patrolling Admin</span>
           <button
             type="button"
-            onClick={close}
+            onClick={closeMobile}
             aria-label="Close sidebar"
             className="rounded-md p-1 text-green-200 hover:bg-green-800 hover:text-white md:hidden"
           >
@@ -101,7 +101,7 @@ export function Sidebar({ permissions }: { permissions: AdminPermissions }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={close}
+                    onClick={closeMobile}
                     className={`block whitespace-nowrap rounded-md px-2 py-1.5 text-sm font-medium transition-colors ${
                       active
                         ? "bg-green-700 text-white"
