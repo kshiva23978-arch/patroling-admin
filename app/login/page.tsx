@@ -11,12 +11,7 @@ export default function LoginPage() {
         <div className="mt-6">
           <LoginForm />
         </div>
-        <p className="mt-4 text-center text-xs text-zinc-400">
-          NGO/Organization?{" "}
-          <Link href="/ngo-login" className="hover:underline">
-            Sign in here
-          </Link>
-        </p>
+       
       </div>
     </div>
   );

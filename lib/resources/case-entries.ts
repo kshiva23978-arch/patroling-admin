@@ -83,6 +83,8 @@ export interface CaseEntry {
   end_location: CaseLocation;
   /** Whether the ranger's mandatory start-of-case selfie was captured — see `/api/case-start-selfie/{id}`. */
   has_start_selfie: boolean;
+  /** Whether the ranger's mandatory end-of-case selfie was captured — see `/api/case-end-selfie/{id}`. */
+  has_end_selfie: boolean;
   total_distance: number | null;
   incident_occurred: boolean;
   case_filed: boolean;

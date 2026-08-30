@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { listCaseEntries, type CaseStatus } from "@/lib/resources/case-entries";
+import { listCaseEntries, type CaseEntry, type CaseStatus } from "@/lib/resources/case-entries";
 import { listAllRanges } from "@/lib/resources/ranges";
 import { Pagination } from "@/components/crud/Pagination";
 import { ConfirmDeleteButton } from "@/components/crud/ConfirmDeleteButton";
-import { badgeClass, cardClass } from "@/lib/ui-classes";
+import { DataTable, type Column } from "@/components/crud/DataTable";
+import { badgeClass, linkButtonClass } from "@/lib/ui-classes";
 import { RangeFilter } from "./range-filter";
 import { deleteCaseEntryAction } from "./actions";
 
@@ -28,6 +29,52 @@ export default async function CaseEntriesPage({
     listAllRanges(),
     listCaseEntries(currentPage, currentStatus, currentRangeId),
   ]);
+
+  const columns: Column<CaseEntry>[] = [
+    {
+      header: "Case #",
+      render: (c) => (
+        <Link href={`/case-entries/${c.id}`} className="font-medium text-green-700 hover:underline">
+          {c.case_number}
+        </Link>
+      ),
+    },
+    {
+      header: "Status",
+      render: (c) => <span className={badgeClass(c.status === "completed")}>{c.status.replace("_", " ")}</span>,
+    },
+    {
+      header: "Range",
+      render: (c) => c.range?.name ?? <span className="text-zinc-400">—</span>,
+    },
+    {
+      header: "Beat",
+      render: (c) => c.beat?.name ?? <span className="text-zinc-400">—</span>,
+    },
+    {
+      header: "Leader",
+      render: (c) => c.leader?.name ?? c.leader?.employee_id ?? <span className="text-zinc-400">—</span>,
+    },
+    {
+      header: "Date",
+      render: (c) => c.date ?? <span className="text-zinc-400">—</span>,
+    },
+    {
+      header: "Actions",
+      render: (c) => (
+        <div className="flex gap-2">
+          <Link href={`/case-entries/${c.id}`} className={linkButtonClass}>
+            Track
+          </Link>
+          <ConfirmDeleteButton
+            action={deleteCaseEntryAction.bind(null, c.id)}
+            confirmMessage={`Delete case "${c.case_number}"? This also removes its incidents, filings, route history, and photos. This cannot be undone.`}
+            successMessage="Case deleted."
+          />
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -58,53 +105,7 @@ export default async function CaseEntriesPage({
         <RangeFilter ranges={ranges} currentRangeId={currentRangeId} currentStatus={currentStatus} />
       </div>
 
-      <div className={`overflow-x-auto ${cardClass}`}>
-        <table className="min-w-full divide-y divide-zinc-200 text-sm">
-          <thead className="bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
-            <tr>
-              <th className="px-4 py-2">Case #</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Range</th>
-              <th className="px-4 py-2">Beat</th>
-              <th className="px-4 py-2">Leader</th>
-              <th className="px-4 py-2">Date</th>
-              <th className="px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100">
-            {listing.data.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-zinc-500">
-                  No cases found.
-                </td>
-              </tr>
-            )}
-            {listing.data.map((c) => (
-              <tr key={c.id} className="hover:bg-zinc-50">
-                <td className="px-4 py-2">
-                  <Link href={`/case-entries/${c.id}`} className="font-medium text-green-700 hover:underline">
-                    {c.case_number}
-                  </Link>
-                </td>
-                <td className="px-4 py-2">
-                  <span className={badgeClass(c.status === "completed")}>{c.status.replace("_", " ")}</span>
-                </td>
-                <td className="px-4 py-2">{c.range?.name ?? "—"}</td>
-                <td className="px-4 py-2">{c.beat?.name ?? "—"}</td>
-                <td className="px-4 py-2">{c.leader?.name ?? c.leader?.employee_id ?? "—"}</td>
-                <td className="px-4 py-2">{c.date ?? "—"}</td>
-                <td className="px-4 py-2">
-                  <ConfirmDeleteButton
-                    action={deleteCaseEntryAction.bind(null, c.id)}
-                    confirmMessage={`Delete case "${c.case_number}"? This also removes its incidents, filings, route history, and photos. This cannot be undone.`}
-                    successMessage="Case deleted."
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DataTable columns={columns} rows={listing.data} rowKey={(c) => c.id} emptyMessage="No cases found." />
 
       <Pagination meta={listing.meta} basePath="/case-entries" extraParams={{ status: currentStatus, range: currentRangeId }} />
     </div>

@@ -51,7 +51,7 @@ export function LoginForm() {
 
       <div className="space-y-1">
         <label htmlFor="employeeId" className={labelClass}>
-          Employee ID
+          User ID
         </label>
         <input
           id="employeeId"
