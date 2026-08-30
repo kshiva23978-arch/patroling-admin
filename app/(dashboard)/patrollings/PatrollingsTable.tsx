@@ -60,13 +60,15 @@ export function PatrollingsTable({
       header: "Status",
       render: (p) => <span className={patrolStatusBadgeClass(p.status)}>{patrolStatusLabel(p.status)}</span>,
     },
-    { header: "Date", render: (p) => `${p.date} • ${p.start_time}` },
+    { header: "Date", render: (p) => p.date },
+    { header: "Start Time", render: (p) => p.start_time || <span className="text-zinc-400">—</span> },
+    { header: "End Time", render: (p) => p.end_time || <span className="text-zinc-400">—</span> },
     {
-      header: "Traveling By",
+      header: "Travel Modes",
       render: (p) =>
-        p.current_travel_mode === "walking"
-          ? "Walking"
-          : (p.vehicles.find((v) => v.is_current)?.registration_no ?? <span className="text-zinc-400">—</span>),
+        p.modes.length > 0
+          ? p.modes.map((m) => m.name).join(", ")
+          : <span className="text-zinc-400">—</span>,
     },
     {
       header: "Actions",
