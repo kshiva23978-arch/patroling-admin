@@ -21,10 +21,11 @@ const VEHICLE_TYPE_LABELS: Record<string, string> = {
   boat: "Boat",
 };
 
-type TravelKind = "walking" | "4_wheeler" | "boat" | "unset";
+type TravelKind = "walking" | "2_wheeler" | "4_wheeler" | "boat" | "unset";
 
 const TRAVEL_KIND_LABELS: Record<TravelKind, string> = {
   walking: "Walking",
+  "2_wheeler": "2 Wheeler",
   "4_wheeler": "4 Wheeler",
   boat: "Boat",
   unset: "Mode Not Set",
@@ -32,6 +33,7 @@ const TRAVEL_KIND_LABELS: Record<TravelKind, string> = {
 
 function travelKindFor(point: PatrolRoutePoint): TravelKind {
   if (point.travel_mode === "walking") return "walking";
+  if (point.vehicle_type === "2_wheeler") return "2_wheeler";
   if (point.vehicle_type === "4_wheeler") return "4_wheeler";
   if (point.vehicle_type === "boat") return "boat";
   return "unset";
@@ -44,7 +46,7 @@ function travelKindFor(point: PatrolRoutePoint): TravelKind {
  * mode change between two points isn't misattributed to either side.
  */
 function distanceByModeKm(points: PatrolRoutePoint[]): Record<TravelKind, number> {
-  const totals: Record<TravelKind, number> = { walking: 0, "4_wheeler": 0, boat: 0, unset: 0 };
+  const totals: Record<TravelKind, number> = { walking: 0, "2_wheeler": 0, "4_wheeler": 0, boat: 0, unset: 0 };
   for (let i = 1; i < points.length; i++) {
     const prevKind = travelKindFor(points[i - 1]);
     const kind = travelKindFor(points[i]);
@@ -133,7 +135,8 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 /** Everything below the live map on a patrolling's detail page: timing, distance breakdown, the free-text report, admin-configured custom field answers, and the full incident/case list with photos. */
 export function PatrolDetails({ entry, points }: { entry: Patrolling; points: PatrolRoutePoint[] }) {
   const modeTotals = distanceByModeKm(points);
-  const combinedTotalKm = modeTotals.walking + modeTotals["4_wheeler"] + modeTotals.boat + modeTotals.unset;
+  const combinedTotalKm =
+    modeTotals.walking + modeTotals["2_wheeler"] + modeTotals["4_wheeler"] + modeTotals.boat + modeTotals.unset;
   const hasTravel = combinedTotalKm > 0;
 
   const latLngPoints = points.map((p) => ({ lat: p.latitude, lng: p.longitude }));

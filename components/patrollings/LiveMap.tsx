@@ -5,12 +5,13 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { PatrolCaseRef, PatrolIncidentRef, PatrolRoutePoint } from "@/lib/resources/patrollings";
 
-type MarkerKind = "walking" | "car" | "boat" | "unknown";
+type MarkerKind = "walking" | "car" | "motorcycle" | "boat" | "unknown";
 
 function markerKindFor(point: PatrolRoutePoint): MarkerKind {
   if (point.travel_mode === "walking") return "walking";
   if (point.vehicle_type === "boat") return "boat";
   if (point.vehicle_type === "4_wheeler") return "car";
+  if (point.vehicle_type === "2_wheeler") return "motorcycle";
   return "unknown";
 }
 
@@ -75,7 +76,8 @@ function splitByGap(points: PatrolRoutePoint[]): PatrolRoutePoint[][] {
 }
 
 function osrmModeFor(point: PatrolRoutePoint): "driving" | null {
-  return markerKindFor(point) === "car" ? "driving" : null;
+  const kind = markerKindFor(point);
+  return kind === "car" || kind === "motorcycle" ? "driving" : null;
 }
 
 type ModeGroup = { mode: "driving" | null; points: PatrolRoutePoint[] };
@@ -179,6 +181,8 @@ function modeLabelFor(kind: MarkerKind): string {
       return "Boat";
     case "car":
       return "4-Wheeler";
+    case "motorcycle":
+      return "2-Wheeler";
     default:
       // Genuinely possible mid-patrol: the ranger toggled a travel mode off
       // (in the app's "Currently Traveling" switches) without picking a new
@@ -210,6 +214,14 @@ function modeGlyphMarkup(kind: MarkerKind): string {
         <path fill="white" d="M4 15h16l-1 3a2 2 0 0 1-1.9 1.4H6.9A2 2 0 0 1 5 18l-1-3z"/>
         <line x1="12" y1="4" x2="12" y2="15" stroke="white" stroke-width="1.5"/>
         <path fill="white" opacity="0.85" d="M12 5.5l4.5 8.5H12V5.5z"/>`;
+    case "motorcycle":
+      return `
+        <g stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+          <circle cx="7" cy="16" r="2.6"/>
+          <circle cx="17" cy="16" r="2.6"/>
+          <path d="M7 16l4-6h4l2 6"/>
+          <path d="M11 10h3.5"/>
+        </g>`;
     default:
       return `<circle cx="12" cy="12" r="3" fill="white"/>`;
   }
