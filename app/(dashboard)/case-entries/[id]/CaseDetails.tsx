@@ -119,6 +119,19 @@ export function CaseDetails({ entry, points }: { entry: CaseEntry; points: CaseR
         </div>
       </Section>
 
+      <Section title="Start Selfie">
+        <p className="text-xs text-zinc-400">
+          Captured on the ranger&apos;s device before the case began, to confirm who actually started it.
+        </p>
+        <div className="mt-2">
+          <PhotoGrid
+            items={entry.has_start_selfie ? [{ id: entry.id }] : []}
+            baseUrl="/api/case-start-selfie"
+            emptyMessage="No selfie captured."
+          />
+        </div>
+      </Section>
+
       <Section title={`Staff Deployed (${entry.staff_names.length}/${entry.staff_deployed_count})`}>
         {entry.staff_names.length === 0 ? (
           <p className="text-sm text-zinc-500">No staff named.</p>

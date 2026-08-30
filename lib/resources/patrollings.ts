@@ -100,6 +100,10 @@ export interface Patrolling {
   current_vehicle_id: string | null;
   start_location: PatrolLocation;
   end_location: PatrolLocation;
+  /** Whether the ranger's mandatory start-of-patrol selfie was captured — see `/api/patrol-start-selfie/{id}`. */
+  has_start_selfie: boolean;
+  /** Whether the ranger's mandatory end-of-patrol selfie was captured — see `/api/patrol-end-selfie/{id}`. */
+  has_end_selfie: boolean;
   total_distance: number | null;
   incident_occurred: boolean;
   case_registered: boolean;

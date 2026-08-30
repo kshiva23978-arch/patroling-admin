@@ -41,7 +41,10 @@ export function DataTable<T>({ columns, rows, rowKey, emptyMessage = "No records
             rows.map((row) => (
               <tr key={rowKey(row)} className="hover:bg-zinc-50">
                 {columns.map((col) => (
-                  <td key={col.header} className={`whitespace-nowrap px-4 py-2.5 text-sm text-zinc-700 ${col.className ?? ""}`}>
+                  <td
+                    key={col.header}
+                    className={`px-4 py-2.5 text-sm text-zinc-700 ${col.className ?? "whitespace-nowrap"}`}
+                  >
                     {col.render(row)}
                   </td>
                 ))}

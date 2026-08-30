@@ -12,7 +12,16 @@ export default async function RolesPage({ searchParams }: { searchParams: Promis
 
   const columns: Column<Role>[] = [
     { header: "Name", render: (r) => <span className="font-medium text-zinc-900">{r.name}</span> },
-    { header: "Description", render: (r) => r.description || <span className="text-zinc-400">—</span> },
+    {
+      header: "Description",
+      className: "max-w-xs truncate",
+      render: (r) =>
+        r.description ? (
+          <span title={r.description}>{r.description}</span>
+        ) : (
+          <span className="text-zinc-400">—</span>
+        ),
+    },
     { header: "Status", render: (r) => <span className={badgeClass(r.status)}>{r.status ? "Active" : "Inactive"}</span> },
     {
       header: "Actions",
