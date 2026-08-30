@@ -67,6 +67,15 @@ export interface PatrolCustomFieldValueRef {
   value: string | null;
 }
 
+/** An admin-authored comment on a patrol entry — see PatrolEntryCommentResource. */
+export interface PatrolCommentRef {
+  id: string;
+  text: string;
+  /** The commenting admin's employee id — admin accounts carry no separate display name. */
+  added_by: string | null;
+  created_at: string | null;
+}
+
 /** Shape returned by `/admin/patrol-entries` — see AdminPatrolEntryResource. */
 export interface Patrolling {
   id: string;
@@ -97,6 +106,8 @@ export interface Patrolling {
   case_reports: PatrolCaseRef[];
   incidents: PatrolIncidentRef[];
   custom_field_values: PatrolCustomFieldValueRef[];
+  /** Only present on the single-entry ("show") response, not the list. */
+  comments: PatrolCommentRef[];
   started_at: string | null;
   ended_at: string | null;
   created_at: string | null;
@@ -211,6 +222,14 @@ export async function listPatrollings(
 export async function getPatrolling(id: string): Promise<Patrolling> {
   const entry = await apiFetch<Patrolling>(`/admin/patrol-entries/${id}`);
   return normalizePatrolling(entry);
+}
+
+/** Adds an admin comment to a patrol entry's discussion thread. */
+export function addPatrolComment(id: string, text: string): Promise<PatrolCommentRef> {
+  return apiFetch<PatrolCommentRef>(`/admin/patrol-entries/${id}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ text }),
+  });
 }
 
 /**

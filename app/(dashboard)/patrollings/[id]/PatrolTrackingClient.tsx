@@ -8,7 +8,7 @@ import { cardClass } from "@/lib/ui-classes";
 import { patrolStatusBadgeClass, patrolStatusLabel } from "@/lib/patrol-status";
 import { fetchPatrollingAction, fetchRoutePointsAction } from "./actions";
 import { PatrolDetails } from "./PatrolDetails";
-import type { Patrolling, PatrolRoutePoint } from "@/lib/resources/patrollings";
+import type { Patrolling, PatrolCommentRef, PatrolRoutePoint } from "@/lib/resources/patrollings";
 
 const ROUTE_POLL_MS = 10_000;
 const ENTRY_POLL_MS = 20_000;
@@ -56,6 +56,10 @@ export function PatrolTrackingClient({
       clearInterval(entryInterval);
     };
   }, [entryId, entry.status]);
+
+  const handleCommentAdded = (comment: PatrolCommentRef) => {
+    setEntry((prev) => ({ ...prev, comments: [...prev.comments, comment] }));
+  };
 
   const travelLabel =
     entry.current_travel_mode === "walking"
@@ -110,7 +114,7 @@ export function PatrolTrackingClient({
         </p>
       )}
 
-      <PatrolDetails entry={entry} points={points} />
+      <PatrolDetails entry={entry} points={points} onCommentAdded={handleCommentAdded} />
     </div>
   );
 }

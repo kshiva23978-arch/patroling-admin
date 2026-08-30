@@ -3,9 +3,11 @@
 import { PhotoGrid } from "@/components/media/PhotoLightbox";
 import { cardClass } from "@/lib/ui-classes";
 import { areaCoveredKm2, areaPatrolledKm2, haversineKm } from "@/lib/geo";
+import { PatrolComments } from "./PatrolComments";
 import type {
   Patrolling,
   PatrolRoutePoint,
+  PatrolCommentRef,
   PatrolCustomFieldValueRef,
   PatrolLeaderRef,
 } from "@/lib/resources/patrollings";
@@ -65,7 +67,7 @@ function createdByLabel(leader: PatrolLeaderRef | null): string {
   return leader.name ? `${leader.name} (${leader.employee_id})` : leader.employee_id;
 }
 
-function formatDateTime(value: string | null): string {
+export function formatDateTime(value: string | null): string {
   if (!value) return "—";
   return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 }
@@ -114,7 +116,7 @@ function CustomFieldValue({ field }: { field: PatrolCustomFieldValueRef }) {
 }
 
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+export function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className={`space-y-3 p-4 ${cardClass}`}>
       <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
@@ -133,7 +135,15 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 /** Everything below the live map on a patrolling's detail page: timing, distance breakdown, the free-text report, admin-configured custom field answers, and the full incident/case list with photos. */
-export function PatrolDetails({ entry, points }: { entry: Patrolling; points: PatrolRoutePoint[] }) {
+export function PatrolDetails({
+  entry,
+  points,
+  onCommentAdded,
+}: {
+  entry: Patrolling;
+  points: PatrolRoutePoint[];
+  onCommentAdded: (comment: PatrolCommentRef) => void;
+}) {
   const modeTotals = distanceByModeKm(points);
   const combinedTotalKm =
     modeTotals.walking + modeTotals["2_wheeler"] + modeTotals["4_wheeler"] + modeTotals.boat + modeTotals.unset;
@@ -350,6 +360,10 @@ export function PatrolDetails({ entry, points }: { entry: Patrolling; points: Pa
             ))}
           </div>
         )}
+      </Section>
+
+      <Section title={`Comments (${entry.comments.length})`}>
+        <PatrolComments entryId={entry.id} comments={entry.comments} onCommentAdded={onCommentAdded} />
       </Section>
     </div>
   );
