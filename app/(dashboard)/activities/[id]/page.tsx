@@ -34,11 +34,19 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
           />
           <Info
             label="Started"
-            value={activity.started_at ? new Date(activity.started_at).toLocaleString() : "—"}
+            value={
+              activity.started_at
+                ? new Date(activity.started_at).toLocaleString([], { timeZone: "Asia/Kolkata" })
+                : "—"
+            }
           />
           <Info
             label="Ended"
-            value={activity.ended_at ? new Date(activity.ended_at).toLocaleString() : "—"}
+            value={
+              activity.ended_at
+                ? new Date(activity.ended_at).toLocaleString([], { timeZone: "Asia/Kolkata" })
+                : "—"
+            }
           />
         </dl>
         {activity.location.address && (

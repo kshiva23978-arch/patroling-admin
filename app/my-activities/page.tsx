@@ -64,9 +64,15 @@ export default async function MyActivitiesPage() {
             {activity.report && (
               <p className="border-t border-zinc-100 pt-2 text-sm text-zinc-700">{activity.report}</p>
             )}
+            {/* Fixed to the app's own operating timezone rather than the
+                server's — see `PatrolDetails.tsx`'s `formatDateTime` for why. */}
             <p className="text-xs text-zinc-400">
-              {activity.started_at ? new Date(activity.started_at).toLocaleString() : ""}
-              {activity.ended_at ? ` – ${new Date(activity.ended_at).toLocaleString()}` : ""}
+              {activity.started_at
+                ? new Date(activity.started_at).toLocaleString([], { timeZone: "Asia/Kolkata" })
+                : ""}
+              {activity.ended_at
+                ? ` – ${new Date(activity.ended_at).toLocaleString([], { timeZone: "Asia/Kolkata" })}`
+                : ""}
             </p>
           </div>
         ))}

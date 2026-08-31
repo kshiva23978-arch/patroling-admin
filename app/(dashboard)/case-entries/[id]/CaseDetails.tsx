@@ -55,9 +55,17 @@ function leaderLabel(leader: CaseLeaderRef | null): string {
   return leader.name ? `${leader.name} (${leader.employee_id})` : (leader.employee_id ?? "—");
 }
 
+// Fixed to the app's own operating timezone rather than the viewing
+// device's — see `PatrolDetails.tsx`'s matching `formatDateTime` for why.
+const APP_TIME_ZONE = "Asia/Kolkata";
+
 function formatDateTime(value: string | null): string {
   if (!value) return "—";
-  return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+  return new Date(value).toLocaleString([], {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: APP_TIME_ZONE,
+  });
 }
 
 function formatDuration(startedAt: string | null, endedAt: string | null): string {

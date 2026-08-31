@@ -67,9 +67,24 @@ function createdByLabel(leader: PatrolLeaderRef | null): string {
   return leader.name ? `${leader.name} (${leader.employee_id})` : leader.employee_id;
 }
 
+// Fixed to the app's own operating timezone (see the backend's
+// `APP_TIMEZONE`) rather than the viewing device's — this renders on the
+// client (`"use client"`), so without an explicit `timeZone` here,
+// `toLocaleString` silently uses whatever timezone the admin's own
+// browser/OS happens to be set to. A device not set to IST would then show
+// `started_at`/`ended_at` (real UTC instants) offset by that difference,
+// while `start_time`/`end_time` (plain `HH:MM:SS` strings, never converted)
+// stay correct — looking exactly like the two disagree by a fixed amount
+// (India's UTC+5:30) when they don't.
+const APP_TIME_ZONE = "Asia/Kolkata";
+
 export function formatDateTime(value: string | null): string {
   if (!value) return "—";
-  return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+  return new Date(value).toLocaleString([], {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: APP_TIME_ZONE,
+  });
 }
 
 function formatDuration(startedAt: string | null, endedAt: string | null): string {

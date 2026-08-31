@@ -286,9 +286,17 @@ function buildEndpointIcon(label: string, color: string): L.DivIcon {
   });
 }
 
+// Fixed to the app's own operating timezone rather than the viewing
+// device's — see `PatrolDetails.tsx`'s matching `formatDateTime` for why.
+const APP_TIME_ZONE = "Asia/Kolkata";
+
 function formatDateTime(value: string | null): string {
   if (!value) return "—";
-  return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+  return new Date(value).toLocaleString([], {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: APP_TIME_ZONE,
+  });
 }
 
 function photoStripHtml(photos: { id: string }[], baseUrl: string): string {
@@ -479,7 +487,12 @@ export function LiveMap({
       if (kind === prevKind) continue;
 
       const point = points[i];
-      const time = new Date(point.recorded_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      // See `formatDateTime` above for why `timeZone` must be explicit here.
+      const time = new Date(point.recorded_at).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Asia/Kolkata",
+      });
       const marker = L.marker([point.latitude, point.longitude], {
         icon: buildModeChangeIcon(kind),
         zIndexOffset: 950,

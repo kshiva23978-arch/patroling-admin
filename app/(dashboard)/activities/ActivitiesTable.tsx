@@ -46,7 +46,16 @@ export function ActivitiesTable({
     },
     {
       header: "Started",
-      render: (a) => (a.started_at ? new Date(a.started_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "—"),
+      // Fixed to the app's own operating timezone rather than the viewing
+      // device's — see `PatrolDetails.tsx`'s `formatDateTime` for why.
+      render: (a) =>
+        a.started_at
+          ? new Date(a.started_at).toLocaleString([], {
+              dateStyle: "medium",
+              timeStyle: "short",
+              timeZone: "Asia/Kolkata",
+            })
+          : "—",
     },
     {
       header: "Actions",
