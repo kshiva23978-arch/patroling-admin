@@ -1,5 +1,6 @@
 import { DataTable, type Column } from "@/components/crud/DataTable";
 import { Pagination } from "@/components/crud/Pagination";
+import { ApiError } from "@/lib/api-client";
 import { badgeClass, cardClass, inputClass, labelClass, primaryButtonClass } from "@/lib/ui-classes";
 import { listLoginLogs, type LoginLog } from "@/lib/resources/login-logs";
 
@@ -8,12 +9,28 @@ type SearchParams = { page?: string; type?: string; successful?: string; employe
 export default async function LoginLogsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { page, type, successful, employee_id: employeeId } = await searchParams;
 
-  const { data: logs, meta } = await listLoginLogs({
-    page: Number(page) || 1,
-    type: type === "admin" || type === "user" ? type : undefined,
-    successful: successful === "1" ? true : successful === "0" ? false : undefined,
-    employeeId: employeeId || undefined,
-  });
+  let logs: LoginLog[];
+  let meta: Awaited<ReturnType<typeof listLoginLogs>>["meta"];
+  try {
+    ({ data: logs, meta } = await listLoginLogs({
+      page: Number(page) || 1,
+      type: type === "admin" || type === "user" ? type : undefined,
+      successful: successful === "1" ? true : successful === "0" ? false : undefined,
+      employeeId: employeeId || undefined,
+    }));
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 403) {
+      return (
+        <div className="space-y-4">
+          <h1 className="text-xl font-semibold text-zinc-900">Login Logs</h1>
+          <div className={`p-6 text-sm text-zinc-600 ${cardClass}`}>
+            This section is only accessible to a Master Admin (System Administrator).
+          </div>
+        </div>
+      );
+    }
+    throw err;
+  }
 
   const columns: Column<LoginLog>[] = [
     { header: "Employee ID", render: (l) => <span className="font-medium text-zinc-900">{l.employee_id}</span> },
