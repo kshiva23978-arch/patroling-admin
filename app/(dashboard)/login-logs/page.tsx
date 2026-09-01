@@ -50,7 +50,12 @@ export default async function LoginLogsPage({ searchParams }: { searchParams: Pr
     },
     {
       header: "When",
-      render: (l) => (l.created_at ? new Date(l.created_at).toLocaleString() : <span className="text-zinc-400">—</span>),
+      render: (l) =>
+        l.created_at ? (
+          new Date(l.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "medium" })
+        ) : (
+          <span className="text-zinc-400">—</span>
+        ),
     },
   ];
 
