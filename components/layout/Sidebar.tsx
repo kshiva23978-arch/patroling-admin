@@ -57,6 +57,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/admins", label: "Admins", section: "admins" },
       { href: "/users", label: "Field Users", section: "users" },
+      { href: "/login-logs", label: "Login Logs", section: "login_logs", masterOnly: true },
     ],
   },
 ];
