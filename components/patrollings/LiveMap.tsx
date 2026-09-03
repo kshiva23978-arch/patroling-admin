@@ -105,6 +105,34 @@ function groupByMode(points: PatrolRoutePoint[]): ModeGroup[] {
 // continuous.
 const MAX_POINTS_PER_REQUEST = 100;
 
+// Guards against OSRM snapping a chunk onto the wrong road entirely — which
+// happens when the raw points sit near sparse/incomplete road coverage (rural
+// forest patrol areas) or are clustered close together (the ranger idling in
+// one spot). In both cases OSRM can return a route that loops through the
+// local road graph well beyond the ground actually covered, drawing a trail
+// the ranger never walked/drove. A real road can legitimately wind — so this
+// only rejects a snap once it's implausibly longer than the straight-line
+// distance through the same points, not merely longer.
+const MAX_SNAP_TO_STRAIGHT_LINE_RATIO = 2.5;
+
+function haversineMeters(a: L.LatLngTuple, b: L.LatLngTuple): number {
+  const R = 6371000;
+  const [lat1, lng1] = a;
+  const [lat2, lng2] = b;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function straightLineMeters(points: L.LatLngTuple[]): number {
+  let total = 0;
+  for (let i = 1; i < points.length; i++) total += haversineMeters(points[i - 1], points[i]);
+  return total;
+}
+
 async function snapRunToRoads(
   points: PatrolRoutePoint[],
   mode: "driving",
@@ -113,6 +141,7 @@ async function snapRunToRoads(
 
   for (let start = 0; start < points.length - 1; start += MAX_POINTS_PER_REQUEST - 1) {
     const chunk = points.slice(start, start + MAX_POINTS_PER_REQUEST);
+    const rawChunkPath = chunk.map((p): L.LatLngTuple => [p.latitude, p.longitude]);
     const coordinates = chunk.map((p) => `${p.longitude},${p.latitude}`).join(";");
 
     let chunkPath: L.LatLngTuple[];
@@ -122,12 +151,20 @@ async function snapRunToRoads(
       );
       const data = await response.json();
       const coords: [number, number][] | undefined = data?.routes?.[0]?.geometry?.coordinates;
+      const snappedDistance: number | undefined = data?.routes?.[0]?.distance;
       if (!coords || coords.length === 0) throw new Error("No route returned.");
-      chunkPath = coords.map(([lng, lat]) => [lat, lng]);
+
+      const straightDistance = straightLineMeters(rawChunkPath);
+      const impliesWrongRoad =
+        straightDistance > 0 &&
+        typeof snappedDistance === "number" &&
+        snappedDistance > straightDistance * MAX_SNAP_TO_STRAIGHT_LINE_RATIO;
+
+      chunkPath = impliesWrongRoad ? rawChunkPath : coords.map(([lng, lat]) => [lat, lng]);
     } catch {
       // No road connects these points (or the request failed) — fall back
       // to a straight line through them rather than dropping the segment.
-      chunkPath = chunk.map((p): L.LatLngTuple => [p.latitude, p.longitude]);
+      chunkPath = rawChunkPath;
     }
 
     path.push(...(path.length > 0 ? chunkPath.slice(1) : chunkPath));
