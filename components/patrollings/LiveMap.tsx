@@ -213,13 +213,48 @@ function formatDuration(seconds: number): string {
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 }
 
+// Includes seconds — consecutive pings usually land under a minute apart, so
+// hour:minute alone would show the same clock time for both ends of a leg.
 // See `formatDateTime` below for why `timeZone` must be explicit here.
 function formatClockTime(value: string): string {
-  return new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" });
+  return new Date(value).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    timeZone: "Asia/Kolkata",
+  });
 }
 
-function legTooltip(kind: MarkerKind, from: PatrolRoutePoint, to: PatrolRoutePoint, durationSeconds: number): string {
-  return `${modeLabelFor(kind)} · ${formatDuration(durationSeconds)} · ${formatClockTime(from.recorded_at)} → ${formatClockTime(to.recorded_at)}`;
+function haversineMeters(a: L.LatLngTuple, b: L.LatLngTuple): number {
+  const R = 6371000;
+  const [lat1, lng1] = a;
+  const [lat2, lng2] = b;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+/** Ground speed over a leg from its actual recorded coordinates — not the
+ * road-snapped display coordinates, so a snap nudging a point onto a nearby
+ * road doesn't skew the reported speed. */
+function legSpeedKmh(from: PatrolRoutePoint, to: PatrolRoutePoint, durationSeconds: number): number | null {
+  if (durationSeconds <= 0) return null;
+  const meters = haversineMeters([from.latitude, from.longitude], [to.latitude, to.longitude]);
+  return (meters / durationSeconds) * 3.6;
+}
+
+function legTooltip(
+  kind: MarkerKind,
+  from: PatrolRoutePoint,
+  to: PatrolRoutePoint,
+  durationSeconds: number,
+): string {
+  const speed = legSpeedKmh(from, to, durationSeconds);
+  const speedLabel = speed === null ? "stationary" : `${speed.toFixed(1)} km/h`;
+  return `${modeLabelFor(kind)} · ${speedLabel} · ${formatDuration(durationSeconds)} spent · ${formatClockTime(from.recorded_at)} → ${formatClockTime(to.recorded_at)}`;
 }
 
 function modeLabelFor(kind: MarkerKind): string {
