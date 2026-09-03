@@ -104,6 +104,7 @@ export function PatrolTrackingClient({
         <LegendItem color="#eab308" label="Incident" />
         <LegendItem color="#dc2626" label="Case" />
         <span>Click a flag for details.</span>
+        <span>Path darkens the longer time was spent there — hover a stretch for time, mode &amp; duration.</span>
       </div>
 
       {entry.status !== "in_progress" && (

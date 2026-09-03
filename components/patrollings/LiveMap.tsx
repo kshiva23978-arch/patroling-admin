@@ -100,114 +100,126 @@ function groupByMode(points: PatrolRoutePoint[]): ModeGroup[] {
 
 // Kept well under OSRM's practical limits (and the URL length a GET request
 // can carry), and short enough to stay a light, quick request even on the
-// shared public server; longer runs are split into overlapping chunks so
-// consecutive requests share a junction point and the result stays
-// continuous.
+// shared public server.
 const MAX_POINTS_PER_REQUEST = 100;
 
-// Guards against OSRM snapping a chunk onto the wrong road entirely — which
-// happens when the raw points sit near sparse/incomplete road coverage (rural
-// forest patrol areas) or are clustered close together (the ranger idling in
-// one spot). In both cases OSRM can return a route that loops through the
-// local road graph well beyond the ground actually covered, drawing a trail
-// the ranger never walked/drove. A real road can legitimately wind — so this
-// only rejects a snap once it's implausibly longer than the straight-line
-// distance through the same points, not merely longer.
-const MAX_SNAP_TO_STRAIGHT_LINE_RATIO = 2.5;
+/**
+ * Snaps each point in a vehicle run to its own nearest road, independently —
+ * rather than asking OSRM to route *through* every point in order. A routed
+ * path can loop across the local road graph well beyond the ground actually
+ * covered whenever the raw points sit near sparse/incomplete road coverage
+ * (rural forest patrol areas) or are clustered close together (the ranger
+ * idling in one spot), drawing a trail the ranger never walked/drove.
+ * Snapping each point on its own sidesteps that failure mode entirely: the
+ * worst case is a point landing on the nearest real road, not a detour
+ * through the wrong one. The resulting points are then connected by straight
+ * legs (see [buildLegs]), same as any unsnapped run.
+ *
+ * One `/route/v1` call per chunk still snaps every point in it in a single
+ * request — its `waypoints` array carries one snapped location per input
+ * coordinate regardless of whether a route between them was found — so this
+ * costs the same one-request-per-chunk as routing would.
+ */
+async function snapPointsToRoads(points: PatrolRoutePoint[]): Promise<L.LatLngTuple[]> {
+  const result: L.LatLngTuple[] = [];
 
-function haversineMeters(a: L.LatLngTuple, b: L.LatLngTuple): number {
-  const R = 6371000;
-  const [lat1, lng1] = a;
-  const [lat2, lng2] = b;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
-
-function straightLineMeters(points: L.LatLngTuple[]): number {
-  let total = 0;
-  for (let i = 1; i < points.length; i++) total += haversineMeters(points[i - 1], points[i]);
-  return total;
-}
-
-async function snapRunToRoads(
-  points: PatrolRoutePoint[],
-  mode: "driving",
-): Promise<L.LatLngTuple[]> {
-  const path: L.LatLngTuple[] = [];
-
-  for (let start = 0; start < points.length - 1; start += MAX_POINTS_PER_REQUEST - 1) {
+  for (let start = 0; start < points.length; start += MAX_POINTS_PER_REQUEST) {
     const chunk = points.slice(start, start + MAX_POINTS_PER_REQUEST);
-    const rawChunkPath = chunk.map((p): L.LatLngTuple => [p.latitude, p.longitude]);
     const coordinates = chunk.map((p) => `${p.longitude},${p.latitude}`).join(";");
 
-    let chunkPath: L.LatLngTuple[];
     try {
-      const response = await throttledFetch(
-        `${OSRM_BASE_URL}/route/v1/${mode}/${coordinates}?overview=full&geometries=geojson`,
-      );
+      const response = await throttledFetch(`${OSRM_BASE_URL}/route/v1/driving/${coordinates}?overview=false`);
       const data = await response.json();
-      const coords: [number, number][] | undefined = data?.routes?.[0]?.geometry?.coordinates;
-      const snappedDistance: number | undefined = data?.routes?.[0]?.distance;
-      if (!coords || coords.length === 0) throw new Error("No route returned.");
+      const waypoints: { location: [number, number] }[] | undefined = data?.waypoints;
+      if (!waypoints || waypoints.length !== chunk.length) throw new Error("Unexpected waypoints.");
 
-      const straightDistance = straightLineMeters(rawChunkPath);
-      const impliesWrongRoad =
-        straightDistance > 0 &&
-        typeof snappedDistance === "number" &&
-        snappedDistance > straightDistance * MAX_SNAP_TO_STRAIGHT_LINE_RATIO;
-
-      chunkPath = impliesWrongRoad ? rawChunkPath : coords.map(([lng, lat]) => [lat, lng]);
+      chunk.forEach((p, i) => {
+        const loc = waypoints[i]?.location;
+        result.push(loc ? [loc[1], loc[0]] : [p.latitude, p.longitude]);
+      });
     } catch {
-      // No road connects these points (or the request failed) — fall back
-      // to a straight line through them rather than dropping the segment.
-      chunkPath = rawChunkPath;
+      // No nearby road (or the request failed) — fall back to the raw point.
+      chunk.forEach((p) => result.push([p.latitude, p.longitude]));
     }
-
-    path.push(...(path.length > 0 ? chunkPath.slice(1) : chunkPath));
   }
 
-  return path;
+  return result;
 }
 
 /**
- * Builds the map path by snapping each vehicle run of the trail to roads via
- * OSRM and leaving walking/boat/mode-unset runs (and any run a snap request
- * fails for) as straight lines between the raw points. `cache` holds
- * resolved runs keyed by their position in the trail so that, as new points
- * arrive, only the still-growing final run is re-requested — closed runs
- * earlier in the trail are never re-fetched. `keyPrefix` scopes those cache
- * keys to one gap-free trail segment (see [splitByGap]) so two different
- * segments never collide on the same relative position/length.
+ * Resolves each point in the trail to the lat/lng it should be drawn at:
+ * road-snapped for vehicle runs, raw for everything else (see the module
+ * doc comment above for why walking/boat runs are left unsnapped). Output is
+ * one coordinate per input point, in order. `cache` holds resolved runs
+ * keyed by their position in the trail so that, as new points arrive, only
+ * the still-growing final run is re-requested — closed runs earlier in the
+ * trail are never re-fetched. `keyPrefix` scopes those cache keys to one
+ * gap-free trail segment (see [splitByGap]) so two different segments never
+ * collide on the same relative position/length.
  */
-async function buildSnappedPath(
+async function buildDisplayPoints(
   points: PatrolRoutePoint[],
   cache: Map<string, L.LatLngTuple[]>,
   keyPrefix: string,
 ): Promise<L.LatLngTuple[]> {
   const groups = groupByMode(points);
-  const path: L.LatLngTuple[] = [];
+  const result: L.LatLngTuple[] = [];
   let index = 0;
 
   for (const group of groups) {
-    const key = `${keyPrefix}:${group.mode ?? "line"}:${index}:${group.points.length}`;
+    const key = `${keyPrefix}:${group.mode ?? "raw"}:${index}:${group.points.length}`;
     index += group.points.length;
 
-    let segment = cache.get(key);
-    if (!segment) {
-      segment =
-        group.mode && group.points.length >= 2
-          ? await snapRunToRoads(group.points, group.mode)
-          : group.points.map((p): L.LatLngTuple => [p.latitude, p.longitude]);
-      if (group !== groups.at(-1)) cache.set(key, segment);
+    let resolved = cache.get(key);
+    if (!resolved) {
+      resolved = group.mode
+        ? await snapPointsToRoads(group.points)
+        : group.points.map((p): L.LatLngTuple => [p.latitude, p.longitude]);
+      if (group !== groups.at(-1)) cache.set(key, resolved);
     }
-    path.push(...segment);
+    result.push(...resolved);
   }
 
-  return path;
+  return result;
+}
+
+// A leg lasting this long or longer is drawn at the darkest end of the trail
+// color scale — the ranger dwelling in one place, as opposed to passing
+// through it. Kept below `TRAIL_GAP_THRESHOLD_MS` so every leg that's part of
+// a trail (rather than a sync-backlog break) still falls somewhere on the
+// scale rather than saturating it.
+const MAX_DWELL_SECONDS_FOR_COLOR = 5 * 60;
+
+const TRAIL_COLOR_LIGHT = { r: 0xfb, g: 0xbc, b: 0x04 }; // passing through — the route's usual yellow
+const TRAIL_COLOR_DARK = { r: 0x7c, g: 0x2d, b: 0x12 }; // dwelling in place
+
+function legColor(durationSeconds: number): { line: string; casing: string } {
+  const t = Math.max(0, Math.min(1, durationSeconds / MAX_DWELL_SECONDS_FOR_COLOR));
+  const r = Math.round(TRAIL_COLOR_LIGHT.r + (TRAIL_COLOR_DARK.r - TRAIL_COLOR_LIGHT.r) * t);
+  const g = Math.round(TRAIL_COLOR_LIGHT.g + (TRAIL_COLOR_DARK.g - TRAIL_COLOR_LIGHT.g) * t);
+  const b = Math.round(TRAIL_COLOR_LIGHT.b + (TRAIL_COLOR_DARK.b - TRAIL_COLOR_LIGHT.b) * t);
+  return {
+    line: `rgb(${r},${g},${b})`,
+    casing: `rgb(${Math.round(r * 0.45)},${Math.round(g * 0.45)},${Math.round(b * 0.45)})`,
+  };
+}
+
+function formatDuration(seconds: number): string {
+  const whole = Math.max(0, Math.round(seconds));
+  if (whole < 60) return `${whole}s`;
+  const totalMinutes = Math.round(whole / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
+// See `formatDateTime` below for why `timeZone` must be explicit here.
+function formatClockTime(value: string): string {
+  return new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" });
+}
+
+function legTooltip(kind: MarkerKind, from: PatrolRoutePoint, to: PatrolRoutePoint, durationSeconds: number): string {
+  return `${modeLabelFor(kind)} · ${formatDuration(durationSeconds)} · ${formatClockTime(from.recorded_at)} → ${formatClockTime(to.recorded_at)}`;
 }
 
 function modeLabelFor(kind: MarkerKind): string {
@@ -395,13 +407,15 @@ function statBlock(label: string, value: string): string {
 const DEFAULT_CENTER: L.LatLngTuple = [20.5937, 78.9629]; // India, used when there's no GPS trail yet.
 
 /**
- * Renders a patrol's GPS trail as a Google Maps-style yellow route — vehicle
- * runs snapped to roads via OSRM, walking/boat runs left as the raw recorded
- * points (a ping every ~30s while the patrol is active) connected in order.
- * No per-point markers are shown, just the path itself — except where the
+ * Renders a patrol's GPS trail as a Google Maps-style route — vehicle runs
+ * snapped point-by-point to their nearest road via OSRM, walking/boat runs
+ * left as the raw recorded points (a ping every ~30s while the patrol is
+ * active) — with each leg between consecutive points colored by how long the
+ * ranger spent on it (darker = more time spent) and a hover tooltip giving
+ * its travel mode, duration, and time range. Also marked, wherever the
  * ranger's travel mode actually changed (walking ↔ a vehicle, or between
- * vehicle types), each marked with a small blue badge (hover for the mode
- * switched to and when).
+ * vehicle types): a small blue badge (hover for the mode switched to and
+ * when).
  *
  * Incidents and cases are plotted as flags (yellow/red) wherever they carry
  * a location — click one to see its full details, including photos.
@@ -423,11 +437,12 @@ export function LiveMap({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  // One casing+line pair per gap-free trail segment (see [splitByGap]) —
-  // rebuilt whenever the segment boundaries change so a sync gap shows as a
-  // visible break rather than one continuous line jumping across it.
-  const segmentLinesRef = useRef<{ casing: L.Polyline; line: L.Polyline }[]>([]);
-  const snappedSegmentCacheRef = useRef<Map<string, L.LatLngTuple[]>>(new Map());
+  // One casing+line pair per leg (each pair of consecutive recorded points)
+  // — rebuilt whenever the trail changes so a sync gap shows as a visible
+  // break rather than one continuous line jumping across it, and so each leg
+  // can carry its own dwell-time color and hover tooltip.
+  const legLinesRef = useRef<{ casing: L.Polyline; line: L.Polyline }[]>([]);
+  const displayPointCacheRef = useRef<Map<string, L.LatLngTuple[]>>(new Map());
   const startMarkerRef = useRef<L.Marker | null>(null);
   const endMarkerRef = useRef<L.Marker | null>(null);
   const modeChangeMarkersRef = useRef<L.Marker[]>([]);
@@ -455,7 +470,7 @@ export function LiveMap({
     return () => {
       map.remove();
       mapRef.current = null;
-      segmentLinesRef.current = [];
+      legLinesRef.current = [];
       startMarkerRef.current = null;
       endMarkerRef.current = null;
       modeChangeMarkersRef.current = [];
@@ -471,25 +486,43 @@ export function LiveMap({
     let cancelled = false;
     const segments = splitByGap(points);
     Promise.all(
-      segments.map((segment, i) =>
-        buildSnappedPath(segment, snappedSegmentCacheRef.current, `seg${i}`),
-      ),
-    ).then((paths) => {
+      segments.map((segment, i) => buildDisplayPoints(segment, displayPointCacheRef.current, `seg${i}`)),
+    ).then((displaySegments) => {
       if (cancelled || !mapRef.current) return;
 
-      segmentLinesRef.current.forEach(({ casing, line }) => {
+      legLinesRef.current.forEach(({ casing, line }) => {
         casing.remove();
         line.remove();
       });
 
       // Google Maps-style route: a slightly wider dark casing under a
-      // yellow line, giving the path an outlined look instead of a flat
-      // stroke — one such pair per gap-free segment.
-      segmentLinesRef.current = paths.map((path) => {
-        const casing = L.polyline(path, { color: "#8a6d00", weight: 7, opacity: 0.9 }).addTo(mapRef.current!);
-        const line = L.polyline(path, { color: "#fbbc04", weight: 5 }).addTo(mapRef.current!);
-        return { casing, line };
+      // colored line, giving the path an outlined look instead of a flat
+      // stroke — one such pair per leg (each pair of consecutive recorded
+      // points), colored by how long the ranger spent on it: the usual
+      // route yellow for a leg passed straight through, darkening toward
+      // maroon the longer they dwelled before the next ping.
+      const legs: { casing: L.Polyline; line: L.Polyline }[] = [];
+      segments.forEach((segment, si) => {
+        const display = displaySegments[si];
+        for (let i = 1; i < segment.length; i++) {
+          const from = segment[i - 1];
+          const to = segment[i];
+          const durationSeconds =
+            (new Date(to.recorded_at).getTime() - new Date(from.recorded_at).getTime()) / 1000;
+          const { line: lineColor, casing: casingColor } = legColor(durationSeconds);
+          const coords: L.LatLngTuple[] = [display[i - 1], display[i]];
+          const tooltip = legTooltip(markerKindFor(to), from, to, durationSeconds);
+
+          const casing = L.polyline(coords, { color: casingColor, weight: 7, opacity: 0.9 })
+            .addTo(mapRef.current!)
+            .bindTooltip(tooltip, { sticky: true, direction: "top" });
+          const line = L.polyline(coords, { color: lineColor, weight: 5 })
+            .addTo(mapRef.current!)
+            .bindTooltip(tooltip, { sticky: true, direction: "top" });
+          legs.push({ casing, line });
+        }
       });
+      legLinesRef.current = legs;
     });
 
     startMarkerRef.current?.remove();
