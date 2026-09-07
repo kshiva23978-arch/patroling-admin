@@ -22,6 +22,7 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/lib/ui-classes";
+import { activityCategorySchema, type ActivityCategoryInput } from "@/lib/schemas/activity-categories";
 import { adminCreateSchema, adminUpdateSchema, type AdminCreateInput, type AdminUpdateInput } from "@/lib/schemas/admins";
 import { beatCreateSchema, beatUpdateSchema, type BeatCreateInput, type BeatUpdateInput } from "@/lib/schemas/beats";
 import { designationSchema, type DesignationInput } from "@/lib/schemas/designations";
@@ -48,6 +49,7 @@ import { vehicleCreateSchema, vehicleUpdateSchema, type VehicleCreateInput, type
  * schema modules are imported directly on the client.
  */
 const schemaRegistry = {
+  activityCategorySchema,
   adminCreateSchema,
   adminUpdateSchema,
   beatCreateSchema,
@@ -67,6 +69,7 @@ const schemaRegistry = {
 } satisfies Record<string, ZodType<FieldValues>>;
 
 interface SchemaKeyMap {
+  activityCategorySchema: ActivityCategoryInput;
   adminCreateSchema: AdminCreateInput;
   adminUpdateSchema: AdminUpdateInput;
   beatCreateSchema: BeatCreateInput;
