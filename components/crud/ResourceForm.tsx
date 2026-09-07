@@ -24,8 +24,10 @@ import {
 } from "@/lib/ui-classes";
 import { activityCategorySchema, type ActivityCategoryInput } from "@/lib/schemas/activity-categories";
 import { adminCreateSchema, adminUpdateSchema, type AdminCreateInput, type AdminUpdateInput } from "@/lib/schemas/admins";
+import { beachCreateSchema, beachUpdateSchema, type BeachCreateInput, type BeachUpdateInput } from "@/lib/schemas/beaches";
 import { beatCreateSchema, beatUpdateSchema, type BeatCreateInput, type BeatUpdateInput } from "@/lib/schemas/beats";
 import { designationSchema, type DesignationInput } from "@/lib/schemas/designations";
+import { destinationSchema, type DestinationInput } from "@/lib/schemas/destinations";
 import { patrolTypeSchema, type PatrolTypeInput } from "@/lib/schemas/patrol-types";
 import { patrollingModeSchema, type PatrollingModeInput } from "@/lib/schemas/patrolling-modes";
 import { rangeSchema, type RangeInput } from "@/lib/schemas/ranges";
@@ -52,9 +54,12 @@ const schemaRegistry = {
   activityCategorySchema,
   adminCreateSchema,
   adminUpdateSchema,
+  beachCreateSchema,
+  beachUpdateSchema,
   beatCreateSchema,
   beatUpdateSchema,
   designationSchema,
+  destinationSchema,
   patrolTypeSchema,
   patrollingModeSchema,
   rangeSchema,
@@ -72,9 +77,12 @@ interface SchemaKeyMap {
   activityCategorySchema: ActivityCategoryInput;
   adminCreateSchema: AdminCreateInput;
   adminUpdateSchema: AdminUpdateInput;
+  beachCreateSchema: BeachCreateInput;
+  beachUpdateSchema: BeachUpdateInput;
   beatCreateSchema: BeatCreateInput;
   beatUpdateSchema: BeatUpdateInput;
   designationSchema: DesignationInput;
+  destinationSchema: DestinationInput;
   patrolTypeSchema: PatrolTypeInput;
   patrollingModeSchema: PatrollingModeInput;
   rangeSchema: RangeInput;
