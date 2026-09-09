@@ -60,6 +60,7 @@ export default async function BeachCleaningActivityDetailPage({ params }: { para
                 : "—"
             }
           />
+          <Field label="Solid Waste Handover To" value={activity.handover_to || "—"} />
         </dl>
         {activity.location.latitude !== null && activity.location.longitude !== null && (
           <p className="mt-3 text-xs text-zinc-500">

@@ -76,6 +76,7 @@ export interface BeachCleaningActivity {
   total_weight_kg: number | null;
   segregation_percent: number | null;
   closing_report: string | null;
+  handover_to: string | null;
   media: BeachCleaningMediaRef[];
   segregations: BeachCleaningSegregationRef[];
   category_weights: BeachCleaningCategoryWeightRef[];
