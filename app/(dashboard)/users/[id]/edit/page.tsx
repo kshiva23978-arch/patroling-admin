@@ -5,19 +5,24 @@ import { listAllRoles } from "@/lib/resources/roles";
 import { listAllDesignations } from "@/lib/resources/designations";
 import { listAllRanges } from "@/lib/resources/ranges";
 import { listRangesForUser } from "@/lib/resources/user-range-access";
+import { listAllDestinations } from "@/lib/resources/destinations";
+import { listDestinationsForUser } from "@/lib/resources/user-destination-access";
 import { cardClass } from "@/lib/ui-classes";
 import { updateUserAction, saveUserDetailsAction } from "../../actions";
 import { RangeAccessSection } from "./range-access-section";
+import { DestinationAccessSection } from "./destination-access-section";
 
 export default async function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [user, roles, designations, details, allRanges, assignedRanges] = await Promise.all([
+  const [user, roles, designations, details, allRanges, assignedRanges, allDestinations, assignedDestinations] = await Promise.all([
     getUser(id),
     listAllRoles(),
     listAllDesignations(),
     getUserDetailsForUser(id),
     listAllRanges(),
     listRangesForUser(id),
+    listAllDestinations(),
+    listDestinationsForUser(id),
   ]);
 
   return (
@@ -91,6 +96,15 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
       <section className={`space-y-4 p-6 ${cardClass}`}>
         <h2 className="text-sm font-semibold text-zinc-900">Range Access</h2>
         <RangeAccessSection userId={id} assignedRanges={assignedRanges} allRanges={allRanges} />
+      </section>
+
+      <section className={`space-y-4 p-6 ${cardClass}`}>
+        <h2 className="text-sm font-semibold text-zinc-900">Destination Access</h2>
+        <DestinationAccessSection
+          userId={id}
+          assignedDestinations={assignedDestinations}
+          allDestinations={allDestinations}
+        />
       </section>
     </div>
   );

@@ -16,6 +16,9 @@ export const ADMIN_SECTIONS = [
   "beats",
   "destinations",
   "beaches",
+  "countries",
+  "waste_categories",
+  "beach_cleaning",
   "vehicles",
   "staff",
   "admins",
@@ -40,6 +43,9 @@ export const ADMIN_SECTION_LABELS: Record<AdminSection, string> = {
   beats: "Beats",
   destinations: "Destinations",
   beaches: "Beaches",
+  countries: "Countries",
+  waste_categories: "Waste Categories",
+  beach_cleaning: "Beach Cleaning",
   vehicles: "Vehicles",
   staff: "Staff",
   admins: "Admins",
@@ -48,7 +54,7 @@ export const ADMIN_SECTION_LABELS: Record<AdminSection, string> = {
 };
 
 /** Every app-side (ranger) feature a role's permissions can name — mirrors backend `Roles::APP_FEATURES`. */
-export const APP_FEATURES = ["patrolling", "case", "activity"] as const;
+export const APP_FEATURES = ["patrolling", "case", "activity", "beach_cleaning"] as const;
 
 export type AppFeature = (typeof APP_FEATURES)[number];
 
@@ -56,6 +62,7 @@ export const APP_FEATURE_LABELS: Record<AppFeature, string> = {
   patrolling: "Patrolling",
   case: "Case Reports",
   activity: "Activities",
+  beach_cleaning: "Beach Cleaning",
 };
 
 const sectionPermissionSchema = z.object({ view: z.boolean(), manage: z.boolean() });

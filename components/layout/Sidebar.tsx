@@ -38,6 +38,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/patrolling-modes", label: "Patrolling Modes", section: "patrolling_modes" },
       { href: "/patrol-types", label: "Patrol Types", section: "patrol_types" },
       { href: "/custom-fields", label: "Custom Fields", section: "custom_fields" },
+      { href: "/countries", label: "Countries", section: "countries" },
     ],
   },
   {
@@ -47,12 +48,18 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/case-entries", label: "Cases", section: "cases" },
       { href: "/activity-categories", label: "Activity Categories", section: "activity_categories" },
       { href: "/activities", label: "Activities", section: "activities" },
-      { href: "/destinations", label: "Destinations", section: "destinations" },
-      { href: "/beaches", label: "Beaches", section: "beaches" },
       { href: "/ranges", label: "Ranges", section: "ranges" },
       { href: "/beats", label: "Beats", section: "beats" },
       { href: "/vehicles", label: "Vehicles", section: "vehicles" },
       { href: "/staff", label: "Staff", section: "staff" },
+    ],
+  },
+  {
+    title: "Beach Cleaning",
+    items: [
+      { href: "/destinations", label: "Destinations", section: "destinations" },
+      { href: "/beaches", label: "Beaches", section: "beaches" },
+      { href: "/waste-categories", label: "Waste Categories", section: "waste_categories" },
     ],
   },
   {

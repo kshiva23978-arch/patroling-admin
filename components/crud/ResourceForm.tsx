@@ -26,6 +26,7 @@ import { activityCategorySchema, type ActivityCategoryInput } from "@/lib/schema
 import { adminCreateSchema, adminUpdateSchema, type AdminCreateInput, type AdminUpdateInput } from "@/lib/schemas/admins";
 import { beachCreateSchema, beachUpdateSchema, type BeachCreateInput, type BeachUpdateInput } from "@/lib/schemas/beaches";
 import { beatCreateSchema, beatUpdateSchema, type BeatCreateInput, type BeatUpdateInput } from "@/lib/schemas/beats";
+import { countrySchema, type CountryInput } from "@/lib/schemas/countries";
 import { designationSchema, type DesignationInput } from "@/lib/schemas/designations";
 import { destinationSchema, type DestinationInput } from "@/lib/schemas/destinations";
 import { patrolTypeSchema, type PatrolTypeInput } from "@/lib/schemas/patrol-types";
@@ -43,6 +44,7 @@ import {
 import { userDetailsSchema, type UserDetailsInput } from "@/lib/schemas/user-details";
 import { userCreateSchema, userUpdateSchema, type UserCreateInput, type UserUpdateInput } from "@/lib/schemas/users";
 import { vehicleCreateSchema, vehicleUpdateSchema, type VehicleCreateInput, type VehicleUpdateInput } from "@/lib/schemas/vehicles";
+import { wasteCategorySchema, type WasteCategoryInput } from "@/lib/schemas/waste-categories";
 
 /**
  * Zod schema instances are class instances (not plain objects) and cannot be
@@ -58,6 +60,7 @@ const schemaRegistry = {
   beachUpdateSchema,
   beatCreateSchema,
   beatUpdateSchema,
+  countrySchema,
   designationSchema,
   destinationSchema,
   patrolTypeSchema,
@@ -71,6 +74,7 @@ const schemaRegistry = {
   userUpdateSchema,
   vehicleCreateSchema,
   vehicleUpdateSchema,
+  wasteCategorySchema,
 } satisfies Record<string, ZodType<FieldValues>>;
 
 interface SchemaKeyMap {
@@ -81,6 +85,7 @@ interface SchemaKeyMap {
   beachUpdateSchema: BeachUpdateInput;
   beatCreateSchema: BeatCreateInput;
   beatUpdateSchema: BeatUpdateInput;
+  countrySchema: CountryInput;
   designationSchema: DesignationInput;
   destinationSchema: DestinationInput;
   patrolTypeSchema: PatrolTypeInput;
@@ -94,6 +99,7 @@ interface SchemaKeyMap {
   userUpdateSchema: UserUpdateInput;
   vehicleCreateSchema: VehicleCreateInput;
   vehicleUpdateSchema: VehicleUpdateInput;
+  wasteCategorySchema: WasteCategoryInput;
 }
 
 export type SchemaKey = keyof SchemaKeyMap;

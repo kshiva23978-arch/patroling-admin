@@ -8,6 +8,7 @@ import { userDetailsSchema, type UserDetailsInput } from "@/lib/schemas/user-det
 import { createUser, updateUser } from "@/lib/resources/users";
 import { saveUserDetails } from "@/lib/resources/user-details";
 import { grantRangeAccess, revokeRangeAccess } from "@/lib/resources/user-range-access";
+import { grantDestinationAccess, revokeDestinationAccess } from "@/lib/resources/user-destination-access";
 
 export async function createUserAction(input: UserCreateInput): Promise<ActionResult> {
   const parsed = userCreateSchema.safeParse(input);
@@ -75,6 +76,34 @@ export async function grantRangeAccessAction(userId: string, rangeId: string): P
 export async function revokeRangeAccessAction(userId: string, rangeId: string): Promise<ActionResult> {
   try {
     await revokeRangeAccess(userId, rangeId);
+  } catch (err) {
+    return toActionResult(err);
+  }
+
+  revalidatePath(`/users/${userId}/edit`);
+  return { success: true };
+}
+
+
+export async function grantDestinationAccessAction(userId: string, destinationId: string): Promise<ActionResult> {
+  if (!destinationId) {
+    return { success: false, message: "Select a destination first." };
+  }
+
+  try {
+    await grantDestinationAccess(userId, destinationId);
+  } catch (err) {
+    return toActionResult(err);
+  }
+
+  revalidatePath(`/users/${userId}/edit`);
+  return { success: true };
+}
+
+
+export async function revokeDestinationAccessAction(userId: string, destinationId: string): Promise<ActionResult> {
+  try {
+    await revokeDestinationAccess(userId, destinationId);
   } catch (err) {
     return toActionResult(err);
   }

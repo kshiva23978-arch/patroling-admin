@@ -1,6 +1,6 @@
 import "server-only";
 
-import { destroySession, getSessionToken } from "./session";
+import { getSessionToken } from "./session";
 
 export interface Envelope<T> {
   success: boolean;
@@ -87,7 +87,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<Enve
     const body = (json ?? {}) as { message?: string; errors?: Record<string, string[]> };
 
     if (res.status === 401) {
-      await destroySession();
+      // Doesn't destroy the session here — this can run during a Server
+      // Component render (e.g. `requirePermission` in a dashboard layout),
+      // and Next.js only allows cookie mutation inside a Server Action or
+      // Route Handler. The stale/invalid token is harmless left in place:
+      // the backend keeps rejecting it, `getCurrentAdmin`/`requireAdmin`
+      // treat that as logged-out and redirect to /login, and the cookie
+      // gets overwritten on the next successful login (or cleared by the
+      // actual logout Server Action) either way.
       throw new UnauthorizedError(body.message ?? "Your session has expired. Please log in again.");
     }
 
@@ -151,9 +158,10 @@ export async function fetchRawUser<T>(): Promise<T | null> {
   });
 
   if (!res.ok) {
-    if (res.status === 401) {
-      await destroySession();
-    }
+    // Doesn't destroy the session here — see the matching comment in
+    // `request()` above; this runs during render just as often (every
+    // dashboard layout's `requireAdmin`/`requirePermission` call routes
+    // through this).
     return null;
   }
 
