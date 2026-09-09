@@ -60,9 +60,9 @@ export function ReportTable({
             {countries.map((country, index) => (
               <tr key={country} className={index % 2 === 0 ? "bg-white" : "bg-zinc-50/50"}>
                 <td className={cellClass + " text-center text-zinc-500"}>{index + 1}</td>
-                <td className={cellClass}>{country}</td>
+                <td className={cellClass + " text-zinc-900"}>{country}</td>
                 {categories.map((category) => (
-                  <td key={category} className={cellClass + " text-right"}>
+                  <td key={category} className={cellClass + " text-right text-zinc-900"}>
                     {matrix[country]?.[category] ?? 0}
                   </td>
                 ))}
