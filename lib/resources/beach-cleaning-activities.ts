@@ -85,6 +85,60 @@ export interface BeachCleaningRangerOption {
   name: string | null;
 }
 
+export interface BeachCleaningReportFilters {
+  destinationId?: string;
+  beachId?: string;
+  createdBy?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+/**
+ * The fixed "Waste Segregation Format for Sample of 10% (Lot)" report — see
+ * `AdminBeachCleaningActivityController::report`. `countries`/`categories`
+ * are always the full, fixed master lists in a stable order (22/9
+ * entries); `matrix[country][category]` is always present, `0` standing in
+ * for nothing recorded rather than an omitted cell.
+ *
+ * The `estimated_*` fields scale that same recorded (sampled) data up to a
+ * projected 100% collection, per the paper form's own "SAMPLE OF 10%"
+ * title — `estimated_grand_total` minus `grand_total` is the estimated
+ * ~90% that was never individually sorted/counted. `total_bags` is a real
+ * physical count, not a sample, so it has no estimated counterpart.
+ */
+export interface BeachCleaningReportData {
+  countries: string[];
+  categories: string[];
+  matrix: Record<string, Record<string, number>>;
+  country_totals: Record<string, number>;
+  category_totals: Record<string, number>;
+  grand_total: number;
+  total_bags: number;
+  activity_count: number;
+  estimated_matrix: Record<string, Record<string, number>>;
+  estimated_country_totals: Record<string, number>;
+  estimated_category_totals: Record<string, number>;
+  estimated_grand_total: number;
+}
+
+export interface BeachCleaningWeightRow {
+  name: string;
+  weight_kg: number;
+}
+
+/**
+ * Total collected weight across every drive matching the current filters —
+ * see `AdminBeachCleaningActivityController::weightSummary`. Both
+ * breakdowns sum the same country-wise segregation rows' `weight_kg`,
+ * `by_category` grouping them by waste category and `by_destination` by
+ * each row's own drive's destination.
+ */
+export interface BeachCleaningWeightSummary {
+  by_category: BeachCleaningWeightRow[];
+  by_destination: BeachCleaningWeightRow[];
+  total_weight_kg: number;
+}
+
 /**
  * Postgres decimal columns come back from the Laravel API as JSON strings
  * (e.g. `"11.6767400"`), not numbers — coerce them so callers always get
@@ -140,19 +194,72 @@ export interface BeachCleaningFilters {
   createdBy?: string;
 }
 
-export async function listBeachCleaningActivities(
-  page = 1,
-  filters: BeachCleaningFilters = {},
-): Promise<Paginated<BeachCleaningActivity>> {
-  const params = new URLSearchParams({ page: String(page) });
+function filterParams(filters: BeachCleaningFilters): URLSearchParams {
+  const params = new URLSearchParams();
   if (filters.status) params.set("status", filters.status);
   if (filters.destinationId) params.set("destination_id", filters.destinationId);
   if (filters.beachId) params.set("beach_id", filters.beachId);
   if (filters.createdBy) params.set("created_by", filters.createdBy);
+  return params;
+}
+
+export async function listBeachCleaningActivities(
+  page = 1,
+  filters: BeachCleaningFilters = {},
+): Promise<Paginated<BeachCleaningActivity>> {
+  const params = filterParams(filters);
+  params.set("page", String(page));
   const result = await apiFetchPaginated<BeachCleaningActivity>(
     `/admin/beach-cleaning-activities?${params.toString()}`,
   );
   return { ...result, data: result.data.map(normalizeActivity) };
+}
+
+/** Weight totals (by category, by destination) across every drive matching [filters] — powers the list page's summary. */
+export async function getBeachCleaningWeightSummary(
+  filters: BeachCleaningFilters = {},
+): Promise<BeachCleaningWeightSummary> {
+  const params = filterParams(filters);
+  const summary = await apiFetch<BeachCleaningWeightSummary>(
+    `/admin/beach-cleaning-activities/weight-summary?${params.toString()}`,
+  );
+  const normalizeRows = (rows: BeachCleaningWeightRow[]) => rows.map((r) => ({ ...r, weight_kg: toNumber(r.weight_kg) }));
+  return {
+    by_category: normalizeRows(summary.by_category),
+    by_destination: normalizeRows(summary.by_destination),
+    total_weight_kg: toNumber(summary.total_weight_kg),
+  };
+}
+
+/** Generates the fixed country × waste-category report for [filters] — see `AdminBeachCleaningActivityController::report`. */
+export async function getBeachCleaningReport(filters: BeachCleaningReportFilters = {}): Promise<BeachCleaningReportData> {
+  const params = new URLSearchParams();
+  if (filters.destinationId) params.set("destination_id", filters.destinationId);
+  if (filters.beachId) params.set("beach_id", filters.beachId);
+  if (filters.createdBy) params.set("created_by", filters.createdBy);
+  if (filters.dateFrom) params.set("date_from", filters.dateFrom);
+  if (filters.dateTo) params.set("date_to", filters.dateTo);
+
+  const report = await apiFetch<BeachCleaningReportData>(`/admin/beach-cleaning-activities/report?${params.toString()}`);
+
+  const normalizeRecord = (record: Record<string, number>) =>
+    Object.fromEntries(Object.entries(record).map(([key, value]) => [key, toNumber(value)]));
+
+  return {
+    ...report,
+    matrix: Object.fromEntries(Object.entries(report.matrix).map(([country, row]) => [country, normalizeRecord(row)])),
+    country_totals: normalizeRecord(report.country_totals),
+    category_totals: normalizeRecord(report.category_totals),
+    grand_total: toNumber(report.grand_total),
+    total_bags: toNumber(report.total_bags),
+    activity_count: toNumber(report.activity_count),
+    estimated_matrix: Object.fromEntries(
+      Object.entries(report.estimated_matrix).map(([country, row]) => [country, normalizeRecord(row)]),
+    ),
+    estimated_country_totals: normalizeRecord(report.estimated_country_totals),
+    estimated_category_totals: normalizeRecord(report.estimated_category_totals),
+    estimated_grand_total: toNumber(report.estimated_grand_total),
+  };
 }
 
 export async function getBeachCleaningActivity(id: string): Promise<BeachCleaningActivity> {
