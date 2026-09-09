@@ -1,6 +1,6 @@
 import "server-only";
 
-import { apiFetch, apiFetchPaginated, type Paginated } from "@/lib/api-client";
+import { apiFetch, apiFetchAll, apiFetchPaginated, type Paginated } from "@/lib/api-client";
 import type { BeachCreateInput, BeachUpdateInput } from "@/lib/schemas/beaches";
 
 export interface Beach {
@@ -16,6 +16,14 @@ export function listBeaches(page = 1, destinationId?: string): Promise<Paginated
   const params = new URLSearchParams({ page: String(page) });
   if (destinationId) params.set("destination_id", destinationId);
   return apiFetchPaginated<Beach>(`/admin/beaches?${params.toString()}`);
+}
+
+/** Every beach (optionally narrowed to one destination) — for filter dropdowns. */
+export function listAllBeaches(destinationId?: string): Promise<Beach[]> {
+  const params = new URLSearchParams();
+  if (destinationId) params.set("destination_id", destinationId);
+  const query = params.toString();
+  return apiFetchAll<Beach>(`/admin/beaches${query ? `?${query}` : ""}`);
 }
 
 export function getBeach(id: string): Promise<Beach> {

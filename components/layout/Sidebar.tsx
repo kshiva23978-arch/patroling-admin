@@ -57,6 +57,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: "Beach Cleaning",
     items: [
+      { href: "/beach-cleaning-activities", label: "Cleaning Drives", section: "beach_cleaning" },
       { href: "/destinations", label: "Destinations", section: "destinations" },
       { href: "/beaches", label: "Beaches", section: "beaches" },
       { href: "/waste-categories", label: "Waste Categories", section: "waste_categories" },
