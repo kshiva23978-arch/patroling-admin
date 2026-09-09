@@ -49,15 +49,14 @@ export function ReportContent({
         </div>
 
         <div className={`p-4 ${cardClass}`}>
-          <h2 className="text-sm font-semibold text-zinc-900">Recorded Sample vs. Estimated Full Collection</h2>
+          <h2 className="text-sm font-semibold text-zinc-900">Recorded Sample vs. Estimated Remaining</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            The table below only ever covers the recorded 10% sample lot — these figures scale it up to estimate the
-            full collection, per drive's own recorded sample rate.
+            The tables below only ever cover the recorded 10% sample lot — the second one estimates the other ~90%
+            that was never individually sorted/counted, scaled up per each drive&rsquo;s own recorded sample rate.
           </p>
-          <dl className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+          <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
             <SummaryField label="Recorded (10% Sample)" value={`${report.grand_total} Nos.`} />
-            <SummaryField label="Estimated Remaining (~90%)" value={`${(report.estimated_grand_total - report.grand_total).toFixed(2)} Nos.`} />
-            <SummaryField label="Estimated Full Collection (100%)" value={`${report.estimated_grand_total} Nos.`} />
+            <SummaryField label="Estimated Remaining (~90%)" value={`${report.remaining_grand_total} Nos.`} />
           </dl>
         </div>
 
@@ -75,13 +74,13 @@ export function ReportContent({
         </div>
 
         <div>
-          <h2 className="mb-2 text-sm font-semibold text-zinc-900">Estimated Full Collection — 100%</h2>
+          <h2 className="mb-2 text-sm font-semibold text-zinc-900">Estimated Remaining — 90%</h2>
           <ReportTable
             countries={report.countries}
             categories={report.categories}
-            matrix={report.estimated_matrix}
-            categoryTotals={report.estimated_category_totals}
-            grandTotal={report.estimated_grand_total}
+            matrix={report.remaining_matrix}
+            categoryTotals={report.remaining_category_totals}
+            grandTotal={report.remaining_grand_total}
             activityCount={report.activity_count}
           />
         </div>

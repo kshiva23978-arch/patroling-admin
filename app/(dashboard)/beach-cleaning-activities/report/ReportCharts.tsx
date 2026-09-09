@@ -29,11 +29,13 @@ function colorFor(index: number): string {
 
 /**
  * Bar chart of country-wise totals (which origin countries the litter is
- * coming from) and a pie chart of category-wise totals (which waste types
- * dominate) — both drawn from the same fixed report data as [ReportTable],
- * so they always agree with it. Canvas-based (Chart.js), deliberately —
- * `DownloadPdfButton`'s `html2canvas` capture is far more reliable against
- * a `<canvas>` than an SVG chart.
+ * coming from), a pie chart of category-wise totals (which waste types
+ * dominate), and a stacked bar breaking each country down by category (the
+ * chart form of [ReportTable]'s own matrix, at a glance) — all drawn from
+ * the same fixed report data as [ReportTable], so they always agree with
+ * it. Canvas-based (Chart.js), deliberately — `DownloadPdfButton`'s
+ * `html2canvas-pro` capture is far more reliable against a `<canvas>` than
+ * an SVG chart.
  */
 export function ReportCharts({ report }: { report: BeachCleaningReportData }) {
   const countryData = useMemo(
@@ -64,34 +66,70 @@ export function ReportCharts({ report }: { report: BeachCleaningReportData }) {
     [report],
   );
 
+  // One dataset per waste category, each contributing that category's
+  // count for every country — stacking them turns the report's country ×
+  // category matrix into a single readable chart instead of 9 separate bars
+  // per country.
+  const countryByCategoryData = useMemo(
+    () => ({
+      labels: report.countries,
+      datasets: report.categories.map((category, i) => ({
+        label: category,
+        data: report.countries.map((country) => report.matrix[country]?.[category] ?? 0),
+        backgroundColor: colorFor(i),
+      })),
+    }),
+    [report],
+  );
+
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="space-y-4">
       <div className={`space-y-3 p-4 ${cardClass}`}>
-        <h2 className="text-sm font-semibold text-zinc-900">Country-Wise Total</h2>
-        <div className="h-80">
+        <h2 className="text-sm font-semibold text-zinc-900">Country-Wise Category Collection</h2>
+        <div className="h-96">
           <Bar
-            data={countryData}
+            data={countryByCategoryData}
             options={{
               responsive: true,
               maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: { x: { ticks: { autoSkip: false, maxRotation: 90, minRotation: 60 } } },
+              plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 10 } } } },
+              scales: {
+                x: { stacked: true, ticks: { autoSkip: false, maxRotation: 90, minRotation: 60 } },
+                y: { stacked: true },
+              },
             }}
           />
         </div>
       </div>
 
-      <div className={`space-y-3 p-4 ${cardClass}`}>
-        <h2 className="text-sm font-semibold text-zinc-900">Category-Wise Distribution</h2>
-        <div className="h-80">
-          <Pie
-            data={categoryData}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { position: "right", labels: { boxWidth: 12, font: { size: 10 } } } },
-            }}
-          />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className={`space-y-3 p-4 ${cardClass}`}>
+          <h2 className="text-sm font-semibold text-zinc-900">Country-Wise Total</h2>
+          <div className="h-80">
+            <Bar
+              data={countryData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { ticks: { autoSkip: false, maxRotation: 90, minRotation: 60 } } },
+              }}
+            />
+          </div>
+        </div>
+
+        <div className={`space-y-3 p-4 ${cardClass}`}>
+          <h2 className="text-sm font-semibold text-zinc-900">Category-Wise Distribution</h2>
+          <div className="h-80">
+            <Pie
+              data={categoryData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: "right", labels: { boxWidth: 12, font: { size: 10 } } } },
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>

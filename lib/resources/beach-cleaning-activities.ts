@@ -100,11 +100,12 @@ export interface BeachCleaningReportFilters {
  * entries); `matrix[country][category]` is always present, `0` standing in
  * for nothing recorded rather than an omitted cell.
  *
- * The `estimated_*` fields scale that same recorded (sampled) data up to a
- * projected 100% collection, per the paper form's own "SAMPLE OF 10%"
- * title — `estimated_grand_total` minus `grand_total` is the estimated
- * ~90% that was never individually sorted/counted. `total_bags` is a real
- * physical count, not a sample, so it has no estimated counterpart.
+ * The `remaining_*` fields estimate the ~90% never individually
+ * sorted/counted, per the paper form's own "SAMPLE OF 10%" title — scaling
+ * that same recorded (sampled) data by each drive's own sample rate, minus
+ * the 1x already recorded in `matrix`. Deliberately just the remaining
+ * share on its own, not a combined 100% total. `total_bags` is a real
+ * physical count, not a sample, so it has no `remaining` counterpart.
  */
 export interface BeachCleaningReportData {
   countries: string[];
@@ -115,10 +116,10 @@ export interface BeachCleaningReportData {
   grand_total: number;
   total_bags: number;
   activity_count: number;
-  estimated_matrix: Record<string, Record<string, number>>;
-  estimated_country_totals: Record<string, number>;
-  estimated_category_totals: Record<string, number>;
-  estimated_grand_total: number;
+  remaining_matrix: Record<string, Record<string, number>>;
+  remaining_country_totals: Record<string, number>;
+  remaining_category_totals: Record<string, number>;
+  remaining_grand_total: number;
 }
 
 export interface BeachCleaningWeightRow {
@@ -253,12 +254,12 @@ export async function getBeachCleaningReport(filters: BeachCleaningReportFilters
     grand_total: toNumber(report.grand_total),
     total_bags: toNumber(report.total_bags),
     activity_count: toNumber(report.activity_count),
-    estimated_matrix: Object.fromEntries(
-      Object.entries(report.estimated_matrix).map(([country, row]) => [country, normalizeRecord(row)]),
+    remaining_matrix: Object.fromEntries(
+      Object.entries(report.remaining_matrix).map(([country, row]) => [country, normalizeRecord(row)]),
     ),
-    estimated_country_totals: normalizeRecord(report.estimated_country_totals),
-    estimated_category_totals: normalizeRecord(report.estimated_category_totals),
-    estimated_grand_total: toNumber(report.estimated_grand_total),
+    remaining_country_totals: normalizeRecord(report.remaining_country_totals),
+    remaining_category_totals: normalizeRecord(report.remaining_category_totals),
+    remaining_grand_total: toNumber(report.remaining_grand_total),
   };
 }
 
