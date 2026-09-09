@@ -4,18 +4,23 @@ import { listAllRoles } from "@/lib/resources/roles";
 import { listAllDesignations } from "@/lib/resources/designations";
 import { listAllRanges } from "@/lib/resources/ranges";
 import { listRangesForAdmin } from "@/lib/resources/admin-range-access";
+import { listAllDestinations } from "@/lib/resources/destinations";
+import { listDestinationsForAdmin } from "@/lib/resources/admin-destination-access";
 import { cardClass } from "@/lib/ui-classes";
 import { updateAdminAction } from "../../actions";
 import { RangeAccessSection } from "./range-access-section";
+import { DestinationAccessSection } from "./destination-access-section";
 
 export default async function EditAdminPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [admin, roles, designations, allRanges, assignedRanges] = await Promise.all([
+  const [admin, roles, designations, allRanges, assignedRanges, allDestinations, assignedDestinations] = await Promise.all([
     getAdmin(id),
     listAllRoles(),
     listAllDesignations(),
     listAllRanges(),
     listRangesForAdmin(id),
+    listAllDestinations(),
+    listDestinationsForAdmin(id),
   ]);
 
   return (
@@ -66,6 +71,15 @@ export default async function EditAdminPage({ params }: { params: Promise<{ id: 
           regardless.
         </p>
         <RangeAccessSection adminId={id} assignedRanges={assignedRanges} allRanges={allRanges} />
+      </section>
+
+      <section className={`space-y-4 p-6 ${cardClass}`}>
+        <h2 className="text-sm font-semibold text-zinc-900">Destination Access</h2>
+        <p className="text-xs text-zinc-500">
+          Only takes effect for a Department Admin or Ranger-level role — a Master Admin role sees every
+          destination regardless.
+        </p>
+        <DestinationAccessSection adminId={id} assignedDestinations={assignedDestinations} allDestinations={allDestinations} />
       </section>
     </div>
   );

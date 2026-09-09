@@ -6,6 +6,7 @@ import { toActionResult, type ActionResult } from "@/lib/action-result";
 import { adminCreateSchema, adminUpdateSchema, type AdminCreateInput, type AdminUpdateInput } from "@/lib/schemas/admins";
 import { createAdmin, deleteAdmin, updateAdmin } from "@/lib/resources/admins";
 import { grantAdminRangeAccess, revokeAdminRangeAccess } from "@/lib/resources/admin-range-access";
+import { grantAdminDestinationAccess, revokeAdminDestinationAccess } from "@/lib/resources/admin-destination-access";
 import { getCurrentAdmin } from "@/lib/auth";
 
 export async function createAdminAction(input: AdminCreateInput): Promise<ActionResult> {
@@ -74,6 +75,32 @@ export async function grantAdminRangeAccessAction(adminId: string, rangeId: stri
 export async function revokeAdminRangeAccessAction(adminId: string, rangeId: string): Promise<ActionResult> {
   try {
     await revokeAdminRangeAccess(adminId, rangeId);
+  } catch (err) {
+    return toActionResult(err);
+  }
+
+  revalidatePath(`/admins/${adminId}/edit`);
+  return { success: true };
+}
+
+export async function grantAdminDestinationAccessAction(adminId: string, destinationId: string): Promise<ActionResult> {
+  if (!destinationId) {
+    return { success: false, message: "Select a destination first." };
+  }
+
+  try {
+    await grantAdminDestinationAccess(adminId, destinationId);
+  } catch (err) {
+    return toActionResult(err);
+  }
+
+  revalidatePath(`/admins/${adminId}/edit`);
+  return { success: true };
+}
+
+export async function revokeAdminDestinationAccessAction(adminId: string, destinationId: string): Promise<ActionResult> {
+  try {
+    await revokeAdminDestinationAccess(adminId, destinationId);
   } catch (err) {
     return toActionResult(err);
   }

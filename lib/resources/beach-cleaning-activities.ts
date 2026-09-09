@@ -30,19 +30,13 @@ export interface BeachCleaningMediaRef {
   created_at: string | null;
 }
 
-/** A ranger-entered "No.s" count for a category, broken down by the litterer's country. */
+/** A ranger-entered "No.s" count for a category, broken down by the litterer's country — plus an optional KG weight for that same row. */
 export interface BeachCleaningSegregationRef {
   id: string;
   country: BeachCleaningRefShape | null;
   waste_category: BeachCleaningRefShape | null;
   quantity_kg: number;
-}
-
-/** A ranger-entered KG weight for a category — independent of country/segregation counts. */
-export interface BeachCleaningCategoryWeightRef {
-  id: string;
-  waste_category: BeachCleaningRefShape | null;
-  weight_kg: number;
+  weight_kg: number | null;
 }
 
 export interface BeachCleaningReportRow {
@@ -79,7 +73,6 @@ export interface BeachCleaningActivity {
   handover_to: string | null;
   media: BeachCleaningMediaRef[];
   segregations: BeachCleaningSegregationRef[];
-  category_weights: BeachCleaningCategoryWeightRef[];
   report: BeachCleaningReport | null;
   submitted_at: string | null;
   created_at: string | null;
@@ -131,8 +124,11 @@ function normalizeActivity(activity: BeachCleaningActivity): BeachCleaningActivi
     bags_collected: toNumberOrNull(activity.bags_collected),
     total_weight_kg: toNumberOrNull(activity.total_weight_kg),
     segregation_percent: toNumberOrNull(activity.segregation_percent),
-    segregations: (activity.segregations ?? []).map((s) => ({ ...s, quantity_kg: toNumber(s.quantity_kg) })),
-    category_weights: (activity.category_weights ?? []).map((w) => ({ ...w, weight_kg: toNumber(w.weight_kg) })),
+    segregations: (activity.segregations ?? []).map((s) => ({
+      ...s,
+      quantity_kg: toNumber(s.quantity_kg),
+      weight_kg: toNumberOrNull(s.weight_kg),
+    })),
     report: normalizeReport(activity.report ?? null),
   };
 }
@@ -170,8 +166,8 @@ export function listBeachCleaningRangers(): Promise<BeachCleaningRangerOption[]>
 }
 
 /**
- * Deletes a beach cleaning drive outright — its media, segregations, and
- * category weights go with it (see backend `AdminBeachCleaningActivityController::destroy`).
+ * Deletes a beach cleaning drive outright — its media and segregations go
+ * with it (see backend `AdminBeachCleaningActivityController::destroy`).
  */
 export function deleteBeachCleaningActivity(id: string): Promise<void> {
   return apiFetch<void>(`/admin/beach-cleaning-activities/${id}`, { method: "DELETE" });
