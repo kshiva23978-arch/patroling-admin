@@ -195,6 +195,28 @@ export interface BeachCleaningFilters {
   createdBy?: string;
 }
 
+/** One beach's aggregated totals across its drives — see AdminBeachCleaningActivityController::stats. */
+export interface BeachCleaningBeachStat {
+  beach: BeachCleaningRefShape | null;
+  destination: BeachCleaningRefShape | null;
+  activities_count: number;
+  participant_count: number;
+  bags_collected: number;
+  total_weight_kg: number;
+  avg_segregation_percent: number | null;
+}
+
+function normalizeBeachStat(stat: BeachCleaningBeachStat): BeachCleaningBeachStat {
+  return {
+    ...stat,
+    activities_count: toNumber(stat.activities_count),
+    participant_count: toNumber(stat.participant_count),
+    bags_collected: toNumber(stat.bags_collected),
+    total_weight_kg: toNumber(stat.total_weight_kg),
+    avg_segregation_percent: toNumberOrNull(stat.avg_segregation_percent),
+  };
+}
+
 function filterParams(filters: BeachCleaningFilters): URLSearchParams {
   const params = new URLSearchParams();
   if (filters.status) params.set("status", filters.status);
@@ -214,53 +236,6 @@ export async function listBeachCleaningActivities(
     `/admin/beach-cleaning-activities?${params.toString()}`,
   );
   return { ...result, data: result.data.map(normalizeActivity) };
-}
-
-/** Weight totals (by category, by destination) across every drive matching [filters] — powers the list page's summary. */
-export async function getBeachCleaningWeightSummary(
-  filters: BeachCleaningFilters = {},
-): Promise<BeachCleaningWeightSummary> {
-  const params = filterParams(filters);
-  const summary = await apiFetch<BeachCleaningWeightSummary>(
-    `/admin/beach-cleaning-activities/weight-summary?${params.toString()}`,
-  );
-  const normalizeRows = (rows: BeachCleaningWeightRow[]) => rows.map((r) => ({ ...r, weight_kg: toNumber(r.weight_kg) }));
-  return {
-    by_category: normalizeRows(summary.by_category),
-    by_destination: normalizeRows(summary.by_destination),
-    total_weight_kg: toNumber(summary.total_weight_kg),
-  };
-}
-
-/** Generates the fixed country × waste-category report for [filters] — see `AdminBeachCleaningActivityController::report`. */
-export async function getBeachCleaningReport(filters: BeachCleaningReportFilters = {}): Promise<BeachCleaningReportData> {
-  const params = new URLSearchParams();
-  if (filters.destinationId) params.set("destination_id", filters.destinationId);
-  if (filters.beachId) params.set("beach_id", filters.beachId);
-  if (filters.createdBy) params.set("created_by", filters.createdBy);
-  if (filters.dateFrom) params.set("date_from", filters.dateFrom);
-  if (filters.dateTo) params.set("date_to", filters.dateTo);
-
-  const report = await apiFetch<BeachCleaningReportData>(`/admin/beach-cleaning-activities/report?${params.toString()}`);
-
-  const normalizeRecord = (record: Record<string, number>) =>
-    Object.fromEntries(Object.entries(record).map(([key, value]) => [key, toNumber(value)]));
-
-  return {
-    ...report,
-    matrix: Object.fromEntries(Object.entries(report.matrix).map(([country, row]) => [country, normalizeRecord(row)])),
-    country_totals: normalizeRecord(report.country_totals),
-    category_totals: normalizeRecord(report.category_totals),
-    grand_total: toNumber(report.grand_total),
-    total_bags: toNumber(report.total_bags),
-    activity_count: toNumber(report.activity_count),
-    remaining_matrix: Object.fromEntries(
-      Object.entries(report.remaining_matrix).map(([country, row]) => [country, normalizeRecord(row)]),
-    ),
-    remaining_country_totals: normalizeRecord(report.remaining_country_totals),
-    remaining_category_totals: normalizeRecord(report.remaining_category_totals),
-    remaining_grand_total: toNumber(report.remaining_grand_total),
-  };
 }
 
 export async function getBeachCleaningActivity(id: string): Promise<BeachCleaningActivity> {

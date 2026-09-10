@@ -1,16 +1,11 @@
 import Link from "next/link";
-import {
-  listBeachCleaningActivities,
-  listBeachCleaningRangers,
-  getBeachCleaningWeightSummary,
-} from "@/lib/resources/beach-cleaning-activities";
+import { listBeachCleaningActivities, listBeachCleaningRangers } from "@/lib/resources/beach-cleaning-activities";
 import type { BeachCleaningStatus } from "@/lib/resources/beach-cleaning-activities";
 import { listAllDestinations } from "@/lib/resources/destinations";
 import { listAllBeaches } from "@/lib/resources/beaches";
 import { linkButtonClass } from "@/lib/ui-classes";
 import { BeachCleaningActivitiesTable } from "./BeachCleaningActivitiesTable";
 import { BeachCleaningFilters } from "./BeachCleaningFilters";
-import { WeightSummary } from "./WeightSummary";
 
 const STATUS_TABS: { value: BeachCleaningStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -41,12 +36,11 @@ export default async function BeachCleaningActivitiesPage({
     createdBy: createdBy || undefined,
   };
 
-  const [listing, destinations, beaches, rangers, weightSummary] = await Promise.all([
+  const [listing, destinations, beaches, rangers] = await Promise.all([
     listBeachCleaningActivities(currentPage, filters),
     listAllDestinations(),
     listAllBeaches(),
     listBeachCleaningRangers(),
-    getBeachCleaningWeightSummary(filters),
   ]);
 
   return (
@@ -95,8 +89,6 @@ export default async function BeachCleaningActivitiesPage({
           currentStatus={currentStatus}
         />
       </div>
-
-      <WeightSummary summary={weightSummary} />
 
       <BeachCleaningActivitiesTable data={listing} filters={filters} />
     </div>
