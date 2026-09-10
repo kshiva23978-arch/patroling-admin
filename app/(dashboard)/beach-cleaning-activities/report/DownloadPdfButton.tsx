@@ -3,18 +3,20 @@
 import { useState } from "react";
 import { secondaryButtonClass } from "@/lib/ui-classes";
 import type { BeachCleaningReportData } from "@/lib/resources/beach-cleaning-activities";
+import type { ReportChartImage } from "./ReportCharts";
 
 /**
  * Builds the PDF from the report *data* directly (jsPDF text + `autoTable`
- * rows), not by rasterizing the on-screen DOM — a screenshot-based PDF
- * (the previous `html2canvas` approach) embeds one big flattened image, so
- * every number in it is a pixel, not a character: it can't be searched,
+ * rows) rather than by rasterizing the on-screen DOM — a screenshot-based
+ * PDF (the previous `html2canvas` approach) embeds one big flattened image,
+ * so every number in it is a pixel, not a character: it can't be searched,
  * selected, copied, or read by a screen reader/OCR-adjacent tool. This
- * generates real vector text instead, so the tables are natively
- * selectable/searchable in any PDF viewer. Charts stay screen-only (a plot
- * is inherently a picture either way) — only the two country × category
- * tables are put into the PDF, since that's the data anyone would actually
- * want to copy or search.
+ * generates real vector text for both tables instead, so they're natively
+ * selectable/searchable in any PDF viewer. Charts are the one exception —
+ * a plotted chart is inherently a picture either way — so [getChartImages]
+ * supplies PNG snapshots (via each Chart.js canvas's own `toBase64Image()`,
+ * not a DOM screenshot) that get added as their own page each, after the
+ * two tables.
  */
 export function DownloadPdfButton({
   report,
@@ -24,6 +26,7 @@ export function DownloadPdfButton({
   dateFrom,
   dateTo,
   filename,
+  getChartImages,
 }: {
   report: BeachCleaningReportData;
   destinationName?: string;
@@ -32,6 +35,8 @@ export function DownloadPdfButton({
   dateFrom?: string;
   dateTo?: string;
   filename: string;
+  /** Called at download time — see `ReportChartsHandle.getChartImages`. */
+  getChartImages: () => ReportChartImage[];
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -94,6 +99,10 @@ export function DownloadPdfButton({
         categoryTotals: report.remaining_category_totals,
         weightCategoryTotals: report.remaining_weight_category_totals,
       });
+
+      for (const chart of getChartImages()) {
+        addChartPage(doc, chart);
+      }
 
       doc.save(filename);
     } finally {
@@ -204,4 +213,30 @@ function addReportTable(
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- jspdf-autotable attaches this at runtime; not in its public types.
   return (doc as any).lastAutoTable.finalY as number;
+}
+
+/** Its own page per chart — a stacked country × category bar is tall enough that sharing a page with anything else would force it small. */
+function addChartPage(doc: JsPdfDoc, chart: ReportChartImage): void {
+  doc.addPage();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const marginX = 10;
+  const titleY = 14;
+  const topY = 20;
+  const maxWidth = pageWidth - marginX * 2;
+  const maxHeight = pageHeight - topY - 10;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(chart.title, marginX, titleY);
+
+  let width = maxWidth;
+  let height = width / chart.aspectRatio;
+  if (height > maxHeight) {
+    height = maxHeight;
+    width = height * chart.aspectRatio;
+  }
+  const x = marginX + (maxWidth - width) / 2;
+
+  doc.addImage(chart.dataUrl, "PNG", x, topY, width, height);
 }

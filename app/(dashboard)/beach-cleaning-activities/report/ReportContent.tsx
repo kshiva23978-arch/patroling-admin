@@ -1,9 +1,10 @@
 "use client";
 
+import { useRef } from "react";
 import type { BeachCleaningReportData } from "@/lib/resources/beach-cleaning-activities";
 import { cardClass } from "@/lib/ui-classes";
 import { ReportTable } from "./ReportTable";
-import { ReportCharts } from "./ReportCharts";
+import { ReportCharts, type ReportChartsHandle } from "./ReportCharts";
 import { DownloadPdfButton } from "./DownloadPdfButton";
 
 export function ReportContent({
@@ -23,6 +24,7 @@ export function ReportContent({
 }) {
   const filenameParts = ["waste-segregation-report", destinationName, beachName, rangerName].filter(Boolean);
   const filename = `${filenameParts.join("-").toLowerCase().replace(/\s+/g, "-")}.pdf`;
+  const chartsRef = useRef<ReportChartsHandle>(null);
 
   return (
     <div className="space-y-4">
@@ -35,6 +37,7 @@ export function ReportContent({
           dateFrom={dateFrom}
           dateTo={dateTo}
           filename={filename}
+          getChartImages={() => chartsRef.current?.getChartImages() ?? []}
         />
       </div>
 
@@ -97,7 +100,7 @@ export function ReportContent({
           />
         </div>
 
-        <ReportCharts report={report} />
+        <ReportCharts ref={chartsRef} report={report} />
       </div>
     </div>
   );

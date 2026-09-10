@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,6 +12,7 @@ import {
   Title,
 } from "chart.js";
 import { Bar, Pie } from "react-chartjs-2";
+import type { Chart as ChartInstance } from "chart.js";
 import type { BeachCleaningReportData } from "@/lib/resources/beach-cleaning-activities";
 import { cardClass } from "@/lib/ui-classes";
 
@@ -27,17 +28,59 @@ function colorFor(index: number): string {
   return PALETTE[index % PALETTE.length];
 }
 
+/** One chart, exported as a PNG data URL — see [ReportChartsHandle.getChartImages]. */
+export interface ReportChartImage {
+  title: string;
+  dataUrl: string;
+  aspectRatio: number;
+}
+
+export interface ReportChartsHandle {
+  /**
+   * Reads each live Chart.js canvas via its own `toBase64Image()` (the
+   * standard Chart.js export, not a DOM screenshot) — used by
+   * `DownloadPdfButton` to embed these charts into the PDF as images
+   * alongside the text tables. A plotted chart is inherently a picture
+   * either way, so unlike the tables (rebuilt as real PDF text) charts go
+   * in as-is.
+   */
+  getChartImages(): ReportChartImage[];
+}
+
 /**
  * Bar chart of country-wise totals (which origin countries the litter is
  * coming from), a pie chart of category-wise totals (which waste types
  * dominate), and a stacked bar breaking each country down by category (the
  * chart form of [ReportTable]'s own matrix, at a glance) — all drawn from
  * the same fixed report data as [ReportTable], so they always agree with
- * it. Screen-only — `DownloadPdfButton` builds the PDF from the report data
- * directly (real text tables, not a screenshot), so these charts aren't
- * captured into it; a plotted chart is inherently a picture either way.
+ * it. Exposes [ReportChartsHandle] via ref so `ReportContent` can pull
+ * PNG snapshots of each into the downloaded PDF.
  */
-export function ReportCharts({ report }: { report: BeachCleaningReportData }) {
+export const ReportCharts = forwardRef<ReportChartsHandle, { report: BeachCleaningReportData }>(function ReportCharts(
+  { report },
+  ref,
+) {
+  const countryByCategoryRef = useRef<ChartInstance<"bar"> | null>(null);
+  const countryRef = useRef<ChartInstance<"bar"> | null>(null);
+  const categoryRef = useRef<ChartInstance<"pie"> | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    getChartImages: () => {
+      const charts: { title: string; chart: ChartInstance | null }[] = [
+        { title: "Country-Wise Category Collection", chart: countryByCategoryRef.current },
+        { title: "Country-Wise Total", chart: countryRef.current },
+        { title: "Category-Wise Distribution", chart: categoryRef.current },
+      ];
+      return charts
+        .filter((c): c is { title: string; chart: ChartInstance } => c.chart !== null)
+        .map(({ title, chart }) => ({
+          title,
+          dataUrl: chart.toBase64Image(),
+          aspectRatio: chart.canvas.width / chart.canvas.height,
+        }));
+    },
+  }));
+
   const countryData = useMemo(
     () => ({
       labels: report.countries,
@@ -88,6 +131,7 @@ export function ReportCharts({ report }: { report: BeachCleaningReportData }) {
         <h2 className="text-sm font-semibold text-zinc-900">Country-Wise Category Collection</h2>
         <div className="h-96">
           <Bar
+            ref={countryByCategoryRef}
             data={countryByCategoryData}
             options={{
               responsive: true,
@@ -107,6 +151,7 @@ export function ReportCharts({ report }: { report: BeachCleaningReportData }) {
           <h2 className="text-sm font-semibold text-zinc-900">Country-Wise Total</h2>
           <div className="h-80">
             <Bar
+              ref={countryRef}
               data={countryData}
               options={{
                 responsive: true,
@@ -122,6 +167,7 @@ export function ReportCharts({ report }: { report: BeachCleaningReportData }) {
           <h2 className="text-sm font-semibold text-zinc-900">Category-Wise Distribution</h2>
           <div className="h-80">
             <Pie
+              ref={categoryRef}
               data={categoryData}
               options={{
                 responsive: true,
@@ -134,4 +180,4 @@ export function ReportCharts({ report }: { report: BeachCleaningReportData }) {
       </div>
     </div>
   );
-}
+});
