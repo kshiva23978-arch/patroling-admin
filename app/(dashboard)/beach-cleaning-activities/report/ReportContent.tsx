@@ -57,15 +57,17 @@ export function ReportContent({
             The tables below only ever cover the recorded 10% sample lot — the second one estimates the other ~90%
             that was never individually sorted/counted, scaled up per each drive&rsquo;s own recorded sample rate.
           </p>
-          <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+          <dl className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
             <SummaryField
-              label="Recorded (10% Sample)"
+              label="Recorded"
               value={`${report.grand_total} Nos. (${report.weight_grand_total.toFixed(2)} kg)`}
             />
             <SummaryField
               label="Estimated Remaining (~90%)"
               value={`${report.remaining_grand_total} Nos. (${report.remaining_weight_grand_total.toFixed(2)} kg)`}
             />
+            <SummaryField label="No. of Bags" value={String(report.total_bags)} />
+            <SummaryField label="Overall Weight" value={`${report.total_weight_kg.toFixed(2)} kg`} />
           </dl>
         </div>
 

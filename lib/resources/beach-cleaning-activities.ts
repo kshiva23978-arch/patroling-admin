@@ -118,6 +118,8 @@ export interface BeachCleaningReportData {
   category_totals: Record<string, number>;
   grand_total: number;
   total_bags: number;
+  /** The drives' own actually-weighed total (`bca_total_weight_kg`, once per drive) — distinct from `weight_grand_total`, which is only the sampled segregation rows summed up. */
+  total_weight_kg: number;
   activity_count: number;
   remaining_matrix: Record<string, Record<string, number>>;
   remaining_country_totals: Record<string, number>;
@@ -300,6 +302,7 @@ export async function getBeachCleaningReport(filters: BeachCleaningReportFilters
     category_totals: normalizeRecord(report.category_totals),
     grand_total: toNumber(report.grand_total),
     total_bags: toNumber(report.total_bags),
+    total_weight_kg: toNumber(report.total_weight_kg),
     activity_count: toNumber(report.activity_count),
     remaining_matrix: Object.fromEntries(
       Object.entries(report.remaining_matrix).map(([country, row]) => [country, normalizeRecord(row)]),

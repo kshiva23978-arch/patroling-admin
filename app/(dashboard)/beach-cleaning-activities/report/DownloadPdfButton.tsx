@@ -66,13 +66,18 @@ export function DownloadPdfButton({
       );
       doc.text(
         `${report.activity_count} drive${report.activity_count === 1 ? "" : "s"} · ` +
-          `Recorded (10% Sample): ${report.grand_total} Nos. (${report.weight_grand_total.toFixed(2)} kg) · ` +
+          `Recorded: ${report.grand_total} Nos. (${report.weight_grand_total.toFixed(2)} kg) · ` +
           `Estimated Remaining (~90%): ${report.remaining_grand_total} Nos. (${report.remaining_weight_grand_total.toFixed(2)} kg)`,
         marginX,
         25,
       );
+      doc.text(
+        `No. of Bags: ${report.total_bags}    Overall Weight: ${report.total_weight_kg.toFixed(2)} kg`,
+        marginX,
+        30,
+      );
 
-      let cursorY = 30;
+      let cursorY = 35;
       cursorY = addReportTable(doc, autoTable, {
         title: "As Recorded — 10% Sample",
         startY: cursorY,
