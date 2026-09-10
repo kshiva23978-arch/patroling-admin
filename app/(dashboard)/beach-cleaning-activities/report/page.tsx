@@ -6,6 +6,7 @@ import {
 } from "@/lib/resources/beach-cleaning-activities";
 import { listAllDestinations } from "@/lib/resources/destinations";
 import { listAllBeaches } from "@/lib/resources/beaches";
+import { listAllCountries } from "@/lib/resources/countries";
 import { ReportFilters } from "./ReportFilters";
 import { ReportContent } from "./ReportContent";
 
@@ -16,6 +17,7 @@ export default async function BeachCleaningReportPage({
     destination_id?: string;
     beach_id?: string;
     created_by?: string;
+    country_id?: string;
     date_from?: string;
     date_to?: string;
   }>;
@@ -24,6 +26,7 @@ export default async function BeachCleaningReportPage({
     destination_id: destinationId,
     beach_id: beachId,
     created_by: createdBy,
+    country_id: countryId,
     date_from: dateFrom,
     date_to: dateTo,
   } = await searchParams;
@@ -32,15 +35,17 @@ export default async function BeachCleaningReportPage({
     destinationId: destinationId || undefined,
     beachId: beachId || undefined,
     createdBy: createdBy || undefined,
+    countryId: countryId || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   };
 
-  const [report, destinations, beaches, rangers] = await Promise.all([
+  const [report, destinations, beaches, rangers, countries] = await Promise.all([
     getBeachCleaningReport(filters),
     listAllDestinations(),
     listAllBeaches(),
     listBeachCleaningRangers(),
+    listAllCountries(),
   ]);
 
   const destinationName = destinations.find((d) => d.id === filters.destinationId)?.name;
@@ -62,9 +67,11 @@ export default async function BeachCleaningReportPage({
         destinations={destinations}
         beaches={beaches}
         rangers={rangers}
+        countries={countries}
         currentDestinationId={filters.destinationId}
         currentBeachId={filters.beachId}
         currentRangerId={filters.createdBy}
+        currentCountryId={filters.countryId}
         currentDateFrom={filters.dateFrom}
         currentDateTo={filters.dateTo}
       />

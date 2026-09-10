@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { inputClass, labelClass, primaryButtonClass } from "@/lib/ui-classes";
 import type { Destination } from "@/lib/resources/destinations";
 import type { Beach } from "@/lib/resources/beaches";
+import type { Country } from "@/lib/resources/countries";
 import type { BeachCleaningRangerOption } from "@/lib/resources/beach-cleaning-activities";
 
 /**
@@ -19,18 +20,22 @@ export function ReportFilters({
   destinations,
   beaches,
   rangers,
+  countries,
   currentDestinationId,
   currentBeachId,
   currentRangerId,
+  currentCountryId,
   currentDateFrom,
   currentDateTo,
 }: {
   destinations: Destination[];
   beaches: Beach[];
   rangers: BeachCleaningRangerOption[];
+  countries: Country[];
   currentDestinationId?: string;
   currentBeachId?: string;
   currentRangerId?: string;
+  currentCountryId?: string;
   currentDateFrom?: string;
   currentDateTo?: string;
 }) {
@@ -40,6 +45,7 @@ export function ReportFilters({
   const [destinationId, setDestinationId] = useState(currentDestinationId ?? "");
   const [beachId, setBeachId] = useState(currentBeachId ?? "");
   const [rangerId, setRangerId] = useState(currentRangerId ?? "");
+  const [countryId, setCountryId] = useState(currentCountryId ?? "");
   const [dateFrom, setDateFrom] = useState(currentDateFrom ?? "");
   const [dateTo, setDateTo] = useState(currentDateTo ?? "");
 
@@ -53,6 +59,7 @@ export function ReportFilters({
       params.set("beach_id", beachId);
     }
     if (rangerId) params.set("created_by", rangerId);
+    if (countryId) params.set("country_id", countryId);
     if (dateFrom) params.set("date_from", dateFrom);
     if (dateTo) params.set("date_to", dateTo);
     const query = params.toString();
@@ -101,6 +108,18 @@ export function ReportFilters({
           {rangers.map((r) => (
             <option key={r.id} value={r.id}>
               {rangerLabel(r)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="space-y-1">
+        <label className={labelClass}>Country</label>
+        <select value={countryId} onChange={(e) => setCountryId(e.target.value)} className={`${inputClass} w-auto`}>
+          <option value="">All Countries</option>
+          {countries.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.country_name}
             </option>
           ))}
         </select>

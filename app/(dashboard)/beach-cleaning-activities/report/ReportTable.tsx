@@ -13,6 +13,9 @@ export function ReportTable({
   matrix,
   categoryTotals,
   grandTotal,
+  weightMatrix,
+  weightCategoryTotals,
+  weightGrandTotal,
   totalBags,
   activityCount,
 }: {
@@ -21,10 +24,16 @@ export function ReportTable({
   matrix: Record<string, Record<string, number>>;
   categoryTotals: Record<string, number>;
   grandTotal: number;
+  /** Kg counterpart of `matrix`/`categoryTotals`/`grandTotal` — each cell then shows "Nos. / kg" instead of just the count. Omit to render Nos.-only, as before. */
+  weightMatrix?: Record<string, Record<string, number>>;
+  weightCategoryTotals?: Record<string, number>;
+  weightGrandTotal?: number;
   /** Only given for the as-recorded table — bags are a real count, not a sample, so the estimated table has none of its own. */
   totalBags?: number;
   activityCount: number;
 }) {
+  const showWeight = weightMatrix !== undefined;
+
   return (
     <div className="space-y-2">
       <div className="overflow-x-auto rounded-lg border border-zinc-200">
@@ -51,7 +60,7 @@ export function ReportTable({
             <tr className="bg-zinc-50">
               {categories.map((category) => (
                 <th key={category} className={headerCellClass + " font-normal text-zinc-500"}>
-                  Nos.
+                  {showWeight ? "Nos. / kg" : "Nos."}
                 </th>
               ))}
             </tr>
@@ -64,6 +73,11 @@ export function ReportTable({
                 {categories.map((category) => (
                   <td key={category} className={cellClass + " text-right text-zinc-900"}>
                     {matrix[country]?.[category] ?? 0}
+                    {showWeight && (
+                      <span className="block text-[10px] font-normal text-zinc-400">
+                        {(weightMatrix[country]?.[category] ?? 0).toFixed(2)} kg
+                      </span>
+                    )}
                   </td>
                 ))}
                 {totalBags !== undefined && <td className={cellClass + " text-right text-zinc-400"}>0</td>}
@@ -75,6 +89,11 @@ export function ReportTable({
               {categories.map((category) => (
                 <td key={category} className={cellClass + " text-right"}>
                   {categoryTotals[category] ?? 0}
+                  {showWeight && (
+                    <span className="block text-[10px] font-normal text-zinc-500">
+                      {(weightCategoryTotals?.[category] ?? 0).toFixed(2)} kg
+                    </span>
+                  )}
                 </td>
               ))}
               {totalBags !== undefined && <td className={cellClass + " text-right"}>{totalBags}</td>}
@@ -84,6 +103,7 @@ export function ReportTable({
       </div>
       <p className="text-xs text-zinc-500">
         {activityCount} drive{activityCount === 1 ? "" : "s"} · Grand total {grandTotal} Nos.
+        {showWeight && ` (${(weightGrandTotal ?? 0).toFixed(2)} kg)`}
         {totalBags !== undefined &&
           " · No. of Bags is recorded per drive, not per country — shown here as a single total, not a per-row breakdown."}
       </p>

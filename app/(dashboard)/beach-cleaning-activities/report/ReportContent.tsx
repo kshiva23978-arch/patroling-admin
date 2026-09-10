@@ -55,8 +55,14 @@ export function ReportContent({
             that was never individually sorted/counted, scaled up per each drive&rsquo;s own recorded sample rate.
           </p>
           <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
-            <SummaryField label="Recorded (10% Sample)" value={`${report.grand_total} Nos.`} />
-            <SummaryField label="Estimated Remaining (~90%)" value={`${report.remaining_grand_total} Nos.`} />
+            <SummaryField
+              label="Recorded (10% Sample)"
+              value={`${report.grand_total} Nos. (${report.weight_grand_total.toFixed(2)} kg)`}
+            />
+            <SummaryField
+              label="Estimated Remaining (~90%)"
+              value={`${report.remaining_grand_total} Nos. (${report.remaining_weight_grand_total.toFixed(2)} kg)`}
+            />
           </dl>
         </div>
 
@@ -68,6 +74,9 @@ export function ReportContent({
             matrix={report.matrix}
             categoryTotals={report.category_totals}
             grandTotal={report.grand_total}
+            weightMatrix={report.weight_matrix}
+            weightCategoryTotals={report.weight_category_totals}
+            weightGrandTotal={report.weight_grand_total}
             totalBags={report.total_bags}
             activityCount={report.activity_count}
           />
@@ -81,6 +90,9 @@ export function ReportContent({
             matrix={report.remaining_matrix}
             categoryTotals={report.remaining_category_totals}
             grandTotal={report.remaining_grand_total}
+            weightMatrix={report.remaining_weight_matrix}
+            weightCategoryTotals={report.remaining_weight_category_totals}
+            weightGrandTotal={report.remaining_weight_grand_total}
             activityCount={report.activity_count}
           />
         </div>

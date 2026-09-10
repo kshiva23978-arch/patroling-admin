@@ -2,17 +2,19 @@ import type { BeachCleaningWeightRow, BeachCleaningWeightSummary } from "@/lib/r
 import { cardClass } from "@/lib/ui-classes";
 
 /**
- * Total collected weight (KG), by category and by destination, across every
- * drive matching the list page's current filters — see
- * `getBeachCleaningWeightSummary`. Skips itself entirely once there's
- * nothing weighed yet, same as the per-activity report tables would.
+ * Total collected weight (KG), by category, by destination, and by
+ * waste-origin country, across every drive matching the list page's
+ * current filters — see `getBeachCleaningWeightSummary`. Skips itself
+ * entirely once there's nothing weighed yet, same as the per-activity
+ * report tables would.
  */
 export function WeightSummary({ summary }: { summary: BeachCleaningWeightSummary }) {
   if (summary.total_weight_kg === 0) return null;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-4 sm:grid-cols-3">
       <WeightTable title="Category-Wise Weight" rows={summary.by_category} />
+      <WeightTable title="Country-Wise Weight" rows={summary.by_country} />
       <WeightTable title="Destination-Wise Weight" rows={summary.by_destination} />
     </div>
   );

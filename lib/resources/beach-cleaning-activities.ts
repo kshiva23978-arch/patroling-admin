@@ -89,6 +89,7 @@ export interface BeachCleaningReportFilters {
   destinationId?: string;
   beachId?: string;
   createdBy?: string;
+  countryId?: string;
   dateFrom?: string;
   dateTo?: string;
 }
@@ -120,6 +121,17 @@ export interface BeachCleaningReportData {
   remaining_country_totals: Record<string, number>;
   remaining_category_totals: Record<string, number>;
   remaining_grand_total: number;
+
+  // Same shapes as above, in kilograms (`bcs_weight_kg`) instead of item
+  // counts ("Nos.").
+  weight_matrix: Record<string, Record<string, number>>;
+  weight_country_totals: Record<string, number>;
+  weight_category_totals: Record<string, number>;
+  weight_grand_total: number;
+  remaining_weight_matrix: Record<string, Record<string, number>>;
+  remaining_weight_country_totals: Record<string, number>;
+  remaining_weight_category_totals: Record<string, number>;
+  remaining_weight_grand_total: number;
 }
 
 export interface BeachCleaningWeightRow {
@@ -137,6 +149,7 @@ export interface BeachCleaningWeightRow {
 export interface BeachCleaningWeightSummary {
   by_category: BeachCleaningWeightRow[];
   by_destination: BeachCleaningWeightRow[];
+  by_country: BeachCleaningWeightRow[];
   total_weight_kg: number;
 }
 
@@ -257,6 +270,7 @@ export async function getBeachCleaningWeightSummary(
   return {
     by_category: normalizeRows(summary.by_category),
     by_destination: normalizeRows(summary.by_destination),
+    by_country: normalizeRows(summary.by_country),
     total_weight_kg: toNumber(summary.total_weight_kg),
   };
 }
@@ -267,6 +281,7 @@ export async function getBeachCleaningReport(filters: BeachCleaningReportFilters
   if (filters.destinationId) params.set("destination_id", filters.destinationId);
   if (filters.beachId) params.set("beach_id", filters.beachId);
   if (filters.createdBy) params.set("created_by", filters.createdBy);
+  if (filters.countryId) params.set("country_id", filters.countryId);
   if (filters.dateFrom) params.set("date_from", filters.dateFrom);
   if (filters.dateTo) params.set("date_to", filters.dateTo);
 
@@ -289,6 +304,19 @@ export async function getBeachCleaningReport(filters: BeachCleaningReportFilters
     remaining_country_totals: normalizeRecord(report.remaining_country_totals),
     remaining_category_totals: normalizeRecord(report.remaining_category_totals),
     remaining_grand_total: toNumber(report.remaining_grand_total),
+
+    weight_matrix: Object.fromEntries(
+      Object.entries(report.weight_matrix).map(([country, row]) => [country, normalizeRecord(row)]),
+    ),
+    weight_country_totals: normalizeRecord(report.weight_country_totals),
+    weight_category_totals: normalizeRecord(report.weight_category_totals),
+    weight_grand_total: toNumber(report.weight_grand_total),
+    remaining_weight_matrix: Object.fromEntries(
+      Object.entries(report.remaining_weight_matrix).map(([country, row]) => [country, normalizeRecord(row)]),
+    ),
+    remaining_weight_country_totals: normalizeRecord(report.remaining_weight_country_totals),
+    remaining_weight_category_totals: normalizeRecord(report.remaining_weight_category_totals),
+    remaining_weight_grand_total: toNumber(report.remaining_weight_grand_total),
   };
 }
 

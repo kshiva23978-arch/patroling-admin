@@ -1,12 +1,18 @@
 import Link from "next/link";
-import { listBeachCleaningActivities, listBeachCleaningRangers, getBeachCleaningStats } from "@/lib/resources/beach-cleaning-activities";
+import {
+  listBeachCleaningActivities,
+  listBeachCleaningRangers,
+  getBeachCleaningStats,
+  getBeachCleaningWeightSummary,
+} from "@/lib/resources/beach-cleaning-activities";
 import type { BeachCleaningStatus } from "@/lib/resources/beach-cleaning-activities";
 import { listAllDestinations } from "@/lib/resources/destinations";
 import { listAllBeaches } from "@/lib/resources/beaches";
-import { linkButtonClass } from "@/lib/ui-classes";
+import { linkButtonClass, cardClass } from "@/lib/ui-classes";
 import { BeachCleaningActivitiesTable } from "./BeachCleaningActivitiesTable";
 import { BeachCleaningFilters } from "./BeachCleaningFilters";
 import { BeachCleaningStatsTable } from "./BeachCleaningStatsTable";
+import { WeightSummary } from "./WeightSummary";
 
 const STATUS_TABS: { value: BeachCleaningStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -37,13 +43,17 @@ export default async function BeachCleaningActivitiesPage({
     createdBy: createdBy || undefined,
   };
 
-  const [listing, destinations, beaches, rangers, beachStats] = await Promise.all([
+  const [listing, destinations, beaches, rangers, beachStats, weightSummary] = await Promise.all([
     listBeachCleaningActivities(currentPage, filters),
     listAllDestinations(),
     listAllBeaches(),
     listBeachCleaningRangers(),
     getBeachCleaningStats(filters),
+    getBeachCleaningWeightSummary(filters),
   ]);
+
+  const totalCleans = listing.meta?.total ?? beachStats.reduce((sum, s) => sum + s.activities_count, 0);
+  const totalBagsCollected = beachStats.reduce((sum, s) => sum + s.bags_collected, 0);
 
   return (
     <div className="space-y-4">
@@ -91,6 +101,27 @@ export default async function BeachCleaningActivitiesPage({
           currentStatus={currentStatus}
         />
       </div>
+
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className={`p-5 ${cardClass}`}>
+          <p className="text-xs font-medium text-zinc-500">Total Cleans</p>
+          <p className="mt-2 text-2xl font-semibold text-zinc-900">{totalCleans}</p>
+        </div>
+        <div className={`p-5 ${cardClass}`}>
+          <p className="text-xs font-medium text-zinc-500">Total Collection (kg)</p>
+          <p className="mt-2 text-2xl font-semibold text-zinc-900">{weightSummary.total_weight_kg.toFixed(1)}</p>
+        </div>
+        <div className={`p-5 ${cardClass}`}>
+          <p className="text-xs font-medium text-zinc-500">Total Bags Collected</p>
+          <p className="mt-2 text-2xl font-semibold text-zinc-900">{totalBagsCollected}</p>
+        </div>
+        <div className={`p-5 ${cardClass}`}>
+          <p className="text-xs font-medium text-zinc-500">Countries Represented</p>
+          <p className="mt-2 text-2xl font-semibold text-zinc-900">{weightSummary.by_country.length}</p>
+        </div>
+      </div>
+
+      <WeightSummary summary={weightSummary} />
 
       <BeachCleaningStatsTable stats={beachStats} />
 
