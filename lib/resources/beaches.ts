@@ -6,15 +6,17 @@ import type { BeachCreateInput, BeachUpdateInput } from "@/lib/schemas/beaches";
 export interface Beach {
   id: string;
   destination_id: string;
+  shared_destination_id: string | null;
   name: string;
   status: boolean;
   created_at: string | null;
   updated_at: string | null;
 }
 
-export function listBeaches(page = 1, destinationId?: string): Promise<Paginated<Beach>> {
+export function listBeaches(page = 1, destinationId?: string, search?: string): Promise<Paginated<Beach>> {
   const params = new URLSearchParams({ page: String(page) });
   if (destinationId) params.set("destination_id", destinationId);
+  if (search) params.set("search", search);
   return apiFetchPaginated<Beach>(`/admin/beaches?${params.toString()}`);
 }
 
@@ -33,14 +35,24 @@ export function getBeach(id: string): Promise<Beach> {
 export function createBeach(input: BeachCreateInput): Promise<Beach> {
   return apiFetch<Beach>("/admin/beaches", {
     method: "POST",
-    body: JSON.stringify({ destination_id: input.destinationId, name: input.name, status: input.status }),
+    body: JSON.stringify({
+      destination_id: input.destinationId,
+      shared_destination_id: input.sharedDestinationId || null,
+      name: input.name,
+      status: input.status,
+    }),
   });
 }
 
 export function updateBeach(id: string, input: BeachUpdateInput): Promise<Beach> {
   return apiFetch<Beach>(`/admin/beaches/${id}`, {
     method: "PUT",
-    body: JSON.stringify({ name: input.name, status: input.status }),
+    body: JSON.stringify({
+      destination_id: input.destinationId,
+      shared_destination_id: input.sharedDestinationId || null,
+      name: input.name,
+      status: input.status,
+    }),
   });
 }
 

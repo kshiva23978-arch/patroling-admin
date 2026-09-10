@@ -10,18 +10,30 @@ import { deleteBeachAction } from "./actions";
 export default async function BeachesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; destination_id?: string }>;
+  searchParams: Promise<{ page?: string; destination_id?: string; search?: string }>;
 }) {
-  const { page, destination_id: destinationId } = await searchParams;
+  const { page, destination_id: destinationId, search } = await searchParams;
   const [{ data: beaches, meta }, destinations] = await Promise.all([
-    listBeaches(Number(page) || 1, destinationId),
+    listBeaches(Number(page) || 1, destinationId, search),
     listAllDestinations(),
   ]);
   const destinationName = new Map(destinations.map((d) => [d.id, d.name]));
 
   const columns: Column<Beach>[] = [
     { header: "Name", render: (b) => <span className="font-medium text-zinc-900">{b.name}</span> },
-    { header: "Destination", render: (b) => destinationName.get(b.destination_id) ?? b.destination_id },
+    {
+      header: "Destination",
+      render: (b) => (
+        <div>
+          <span>{destinationName.get(b.destination_id) ?? b.destination_id}</span>
+          {b.shared_destination_id && (
+            <div className="text-xs text-zinc-500">
+              Also shared with {destinationName.get(b.shared_destination_id) ?? b.shared_destination_id}
+            </div>
+          )}
+        </div>
+      ),
+    },
     { header: "Status", render: (b) => <span className={badgeClass(b.status)}>{b.status ? "Active" : "Inactive"}</span> },
     {
       header: "Actions",
@@ -51,6 +63,19 @@ export default async function BeachesPage({
 
       <form method="get" className="flex items-end gap-2">
         <div className="w-64 space-y-1">
+          <label htmlFor="search" className="block text-xs font-medium text-zinc-500">
+            Search by name
+          </label>
+          <input
+            type="text"
+            id="search"
+            name="search"
+            defaultValue={search ?? ""}
+            placeholder="Beach name…"
+            className={inputClass}
+          />
+        </div>
+        <div className="w-64 space-y-1">
           <label htmlFor="destination_id" className="block text-xs font-medium text-zinc-500">
             Filter by destination
           </label>
@@ -69,7 +94,7 @@ export default async function BeachesPage({
       </form>
 
       <DataTable columns={columns} rows={beaches} rowKey={(b) => b.id} emptyMessage="No beaches yet." />
-      <Pagination meta={meta} basePath="/beaches" extraParams={{ destination_id: destinationId }} />
+      <Pagination meta={meta} basePath="/beaches" extraParams={{ destination_id: destinationId, search }} />
     </div>
   );
 }

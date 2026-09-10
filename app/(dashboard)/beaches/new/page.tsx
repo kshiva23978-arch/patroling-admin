@@ -22,6 +22,13 @@ export default async function NewBeachPage() {
             type: "select",
             options: destinations.map((d) => ({ value: d.id, label: d.name })),
           },
+          {
+            name: "sharedDestinationId",
+            label: "Also share with destination",
+            type: "select",
+            options: destinations.map((d) => ({ value: d.id, label: d.name })),
+            helpText: "Optional. Shows this beach in one other destination's beach list too.",
+          },
           { name: "name", label: "Name", type: "text" },
           { name: "status", label: "Active", type: "switch" },
         ]}
