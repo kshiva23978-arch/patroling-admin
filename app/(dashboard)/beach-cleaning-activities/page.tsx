@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { listBeachCleaningActivities, listBeachCleaningRangers } from "@/lib/resources/beach-cleaning-activities";
+import { listBeachCleaningActivities, listBeachCleaningRangers, getBeachCleaningStats } from "@/lib/resources/beach-cleaning-activities";
 import type { BeachCleaningStatus } from "@/lib/resources/beach-cleaning-activities";
 import { listAllDestinations } from "@/lib/resources/destinations";
 import { listAllBeaches } from "@/lib/resources/beaches";
 import { linkButtonClass } from "@/lib/ui-classes";
 import { BeachCleaningActivitiesTable } from "./BeachCleaningActivitiesTable";
 import { BeachCleaningFilters } from "./BeachCleaningFilters";
+import { BeachCleaningStatsTable } from "./BeachCleaningStatsTable";
 
 const STATUS_TABS: { value: BeachCleaningStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -36,11 +37,12 @@ export default async function BeachCleaningActivitiesPage({
     createdBy: createdBy || undefined,
   };
 
-  const [listing, destinations, beaches, rangers] = await Promise.all([
+  const [listing, destinations, beaches, rangers, beachStats] = await Promise.all([
     listBeachCleaningActivities(currentPage, filters),
     listAllDestinations(),
     listAllBeaches(),
     listBeachCleaningRangers(),
+    getBeachCleaningStats(filters),
   ]);
 
   return (
@@ -89,6 +91,8 @@ export default async function BeachCleaningActivitiesPage({
           currentStatus={currentStatus}
         />
       </div>
+
+      <BeachCleaningStatsTable stats={beachStats} />
 
       <BeachCleaningActivitiesTable data={listing} filters={filters} />
     </div>
