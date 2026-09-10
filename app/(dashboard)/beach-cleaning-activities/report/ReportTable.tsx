@@ -47,7 +47,7 @@ export function ReportTable({
                 Country
               </th>
               {categories.map((category) => (
-                <th key={category} className={headerCellClass + " min-w-[90px]"}>
+                <th key={category} className={categoryHeaderCellClass}>
                   {category}
                 </th>
               ))}
@@ -59,7 +59,7 @@ export function ReportTable({
             </tr>
             <tr className="bg-zinc-50">
               {categories.map((category) => (
-                <th key={category} className={headerCellClass + " font-normal text-zinc-500"}>
+                <th key={category} className={headerCellClass + " whitespace-nowrap font-normal text-zinc-500"}>
                   {showWeight ? "Nos. / kg" : "Nos."}
                 </th>
               ))}
@@ -71,7 +71,7 @@ export function ReportTable({
                 <td className={cellClass + " text-center text-zinc-500"}>{index + 1}</td>
                 <td className={cellClass + " text-zinc-900"}>{country}</td>
                 {categories.map((category) => (
-                  <td key={category} className={cellClass + " text-right text-zinc-900"}>
+                  <td key={category} className={categoryCellClass + " text-right text-zinc-900"}>
                     {matrix[country]?.[category] ?? 0}
                     {showWeight && (
                       <span className="block text-[10px] font-normal text-zinc-400">
@@ -87,7 +87,7 @@ export function ReportTable({
               <td className={cellClass}></td>
               <td className={cellClass}>TOTAL</td>
               {categories.map((category) => (
-                <td key={category} className={cellClass + " text-right"}>
+                <td key={category} className={categoryCellClass + " text-right"}>
                   {categoryTotals[category] ?? 0}
                   {showWeight && (
                     <span className="block text-[10px] font-normal text-zinc-500">
@@ -112,4 +112,12 @@ export function ReportTable({
 }
 
 const headerCellClass = "border border-zinc-200 px-2 py-1.5 text-center font-semibold text-zinc-700 whitespace-nowrap";
+// Category names run long ("Plastic Cap/Lid/Spectacles/any other plastic")
+// — without a capped width + wrapping, a `whitespace-nowrap` header forces
+// that single cell to its full text width, dragging the whole table (and
+// the Sl.No/Country columns with it) far wider than the page. Capped at
+// 64px and left to wrap onto 2-3 lines instead.
+const categoryHeaderCellClass =
+  "border border-zinc-200 px-1 py-1.5 w-16 max-w-[64px] text-center align-bottom text-[10px] font-semibold leading-tight break-words text-zinc-700";
 const cellClass = "border border-zinc-200 px-2 py-1";
+const categoryCellClass = "border border-zinc-200 px-1 py-1 w-16 max-w-[64px]";

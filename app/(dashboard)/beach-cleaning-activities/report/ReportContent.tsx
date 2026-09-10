@@ -1,17 +1,11 @@
 "use client";
 
-import { useRef } from "react";
 import type { BeachCleaningReportData } from "@/lib/resources/beach-cleaning-activities";
 import { cardClass } from "@/lib/ui-classes";
 import { ReportTable } from "./ReportTable";
 import { ReportCharts } from "./ReportCharts";
 import { DownloadPdfButton } from "./DownloadPdfButton";
 
-/**
- * Owns the ref [DownloadPdfButton] captures — everything inside it (the
- * summary header, fixed table, and both charts) ends up in the downloaded
- * PDF, exactly as shown on screen.
- */
 export function ReportContent({
   report,
   destinationName,
@@ -27,18 +21,24 @@ export function ReportContent({
   dateFrom?: string;
   dateTo?: string;
 }) {
-  const contentRef = useRef<HTMLDivElement>(null);
-
   const filenameParts = ["waste-segregation-report", destinationName, beachName, rangerName].filter(Boolean);
   const filename = `${filenameParts.join("-").toLowerCase().replace(/\s+/g, "-")}.pdf`;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-end">
-        <DownloadPdfButton targetRef={contentRef} filename={filename} />
+        <DownloadPdfButton
+          report={report}
+          destinationName={destinationName}
+          beachName={beachName}
+          rangerName={rangerName}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          filename={filename}
+        />
       </div>
 
-      <div ref={contentRef} className="space-y-4 bg-white p-1">
+      <div className="space-y-4 bg-white p-1">
         <div className={`p-4 ${cardClass}`}>
           <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
             <SummaryField label="Destination" value={destinationName ?? "All Destinations"} />

@@ -33,9 +33,9 @@ function colorFor(index: number): string {
  * dominate), and a stacked bar breaking each country down by category (the
  * chart form of [ReportTable]'s own matrix, at a glance) — all drawn from
  * the same fixed report data as [ReportTable], so they always agree with
- * it. Canvas-based (Chart.js), deliberately — `DownloadPdfButton`'s
- * `html2canvas-pro` capture is far more reliable against a `<canvas>` than
- * an SVG chart.
+ * it. Screen-only — `DownloadPdfButton` builds the PDF from the report data
+ * directly (real text tables, not a screenshot), so these charts aren't
+ * captured into it; a plotted chart is inherently a picture either way.
  */
 export function ReportCharts({ report }: { report: BeachCleaningReportData }) {
   const countryData = useMemo(
