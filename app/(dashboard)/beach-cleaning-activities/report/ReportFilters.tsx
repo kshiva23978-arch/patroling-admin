@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { inputClass, labelClass, primaryButtonClass } from "@/lib/ui-classes";
 import type { Destination } from "@/lib/resources/destinations";
@@ -35,6 +35,7 @@ export function ReportFilters({
   currentDateTo?: string;
 }) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const [destinationId, setDestinationId] = useState(currentDestinationId ?? "");
   const [beachId, setBeachId] = useState(currentBeachId ?? "");
@@ -55,7 +56,9 @@ export function ReportFilters({
     if (dateFrom) params.set("date_from", dateFrom);
     if (dateTo) params.set("date_to", dateTo);
     const query = params.toString();
-    router.push(`/beach-cleaning-activities/report${query ? `?${query}` : ""}`);
+    startTransition(() => {
+      router.push(`/beach-cleaning-activities/report${query ? `?${query}` : ""}`);
+    });
   };
 
   return (
@@ -113,8 +116,22 @@ export function ReportFilters({
         <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={`${inputClass} w-auto`} />
       </div>
 
-      <button type="button" onClick={generate} className={primaryButtonClass}>
-        Generate Report
+      <button type="button" onClick={generate} disabled={isPending} className={primaryButtonClass}>
+        {isPending ? (
+          <>
+            <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z"
+              />
+            </svg>
+            Generating...
+          </>
+        ) : (
+          "Generate Report"
+        )}
       </button>
     </div>
   );
