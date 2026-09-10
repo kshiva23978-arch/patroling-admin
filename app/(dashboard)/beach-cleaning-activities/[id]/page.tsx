@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PhotoGrid } from "@/components/media/PhotoLightbox";
 import { getBeachCleaningActivity } from "@/lib/resources/beach-cleaning-activities";
 import type { BeachCleaningReportRow } from "@/lib/resources/beach-cleaning-activities";
-import { cardClass, badgeClass } from "@/lib/ui-classes";
+import { cardClass, badgeClass, linkButtonClass } from "@/lib/ui-classes";
 
 const MEDIA_BASE_URL = "/api/beach-cleaning-media";
 
@@ -24,9 +24,14 @@ export default async function BeachCleaningActivityDetailPage({ params }: { para
         </Link>
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold text-zinc-900">{activity.activity_name}</h1>
-          <span className={badgeClass(activity.status === "submitted")}>
-            {activity.status === "submitted" ? "Submitted" : "In Progress"}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className={badgeClass(activity.status === "submitted")}>
+              {activity.status === "submitted" ? "Submitted" : "In Progress"}
+            </span>
+            <Link href={`/beach-cleaning-activities/${id}/report`} className={linkButtonClass}>
+              Download Report
+            </Link>
+          </div>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { apiFetch, apiFetchAll, apiFetchPaginated, type Paginated } from "@/lib/api-client";
+import { apiFetch, apiFetchPaginated, type Paginated } from "@/lib/api-client";
 import type { DestinationInput } from "@/lib/schemas/destinations";
 
 export interface Destination {
@@ -15,8 +15,9 @@ export function listDestinations(page = 1): Promise<Paginated<Destination>> {
   return apiFetchPaginated<Destination>(`/admin/destinations?page=${page}`);
 }
 
+/** Every destination in one round-trip — see `DestinationsController::listAll`. */
 export function listAllDestinations(): Promise<Destination[]> {
-  return apiFetchAll<Destination>("/admin/destinations");
+  return apiFetch<Destination[]>("/admin/destinations/all");
 }
 
 export function getDestination(id: string): Promise<Destination> {
