@@ -55,29 +55,43 @@ export function DownloadPdfButton({
       doc.setFont("helvetica", "bold");
       doc.text("Waste Segregation Report", marginX, 14);
 
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
       const dateRange = dateFrom || dateTo ? `${dateFrom || "…"} to ${dateTo || "…"}` : "All Dates";
-      doc.text(
-        `Destination: ${destinationName ?? "All Destinations"}    Beach: ${beachName ?? "All Beaches"}    ` +
-          `Ranger: ${rangerName ?? "All Rangers"}    Date Range: ${dateRange}`,
-        marginX,
-        20,
-      );
-      doc.text(
-        `${report.activity_count} drive${report.activity_count === 1 ? "" : "s"} · ` +
-          `Recorded: ${report.grand_total} Nos. (${report.weight_grand_total.toFixed(2)} kg) · ` +
-          `Estimated Remaining (~90%): ${report.remaining_grand_total} Nos. (${report.remaining_weight_grand_total.toFixed(2)} kg)`,
-        marginX,
-        25,
-      );
-      doc.text(
-        `No. of Bags: ${report.total_bags}    Overall Weight: ${report.total_weight_kg.toFixed(2)} kg`,
-        marginX,
-        30,
-      );
 
-      let cursorY = 35;
+      // Two small label/value tables, same shape as the on-screen summary
+      // cards — light-bordered `autoTable` grids instead of loose `doc.text`
+      // lines, so the header info reads as an organized table, not a run-on
+      // sentence.
+      autoTable(doc, {
+        startY: 20,
+        margin: { left: marginX, right: marginX },
+        head: [["Destination", "Beach", "Ranger", "Date Range"]],
+        body: [[destinationName ?? "All Destinations", beachName ?? "All Beaches", rangerName ?? "All Rangers", dateRange]],
+        styles: { fontSize: 8, cellPadding: 2, lineColor: [220, 220, 220], lineWidth: 0.1 },
+        headStyles: { fillColor: [244, 244, 245], textColor: [113, 113, 122], fontStyle: "bold", fontSize: 7 },
+        bodyStyles: { textColor: [24, 24, 27] },
+        theme: "grid",
+      });
+
+      autoTable(doc, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see addReportTable's own lastAutoTable note.
+        startY: (doc as any).lastAutoTable.finalY + 4,
+        margin: { left: marginX, right: marginX },
+        head: [["Drives", "Recorded", "Estimated Remaining (~90%)", "No. of Bags", "Overall Weight"]],
+        body: [[
+          String(report.activity_count),
+          `${report.grand_total} Nos. (${report.weight_grand_total.toFixed(2)} kg)`,
+          `${report.remaining_grand_total} Nos. (${report.remaining_weight_grand_total.toFixed(2)} kg)`,
+          String(report.total_bags),
+          `${report.total_weight_kg.toFixed(2)} kg`,
+        ]],
+        styles: { fontSize: 8, cellPadding: 2, lineColor: [220, 220, 220], lineWidth: 0.1 },
+        headStyles: { fillColor: [244, 244, 245], textColor: [113, 113, 122], fontStyle: "bold", fontSize: 7 },
+        bodyStyles: { textColor: [24, 24, 27], fontStyle: "bold" },
+        theme: "grid",
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see addReportTable's own lastAutoTable note.
+      let cursorY = (doc as any).lastAutoTable.finalY + 6;
       cursorY = addReportTable(doc, autoTable, {
         title: "As Recorded — 10% Sample",
         startY: cursorY,
