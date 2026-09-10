@@ -7,9 +7,11 @@ import { secondaryButtonClass } from "@/lib/ui-classes";
  * Snapshots [targetRef]'s DOM (the report table + charts) into a downloaded
  * PDF, client-side — no backend involvement, so this works the same
  * whether the report data came from the local dev backend or the deployed
- * one. Rasterizes at 2x scale for print-legible text; `jsPDF` then slices
- * that single tall image across as many A4 pages as it takes (the report
- * table can easily run longer than one page with 22 countries + charts).
+ * one. Rasterizes at 2x scale for print-legible text, then lays that single
+ * image onto ONE custom-height PDF page sized to fit it exactly — a fixed
+ * A4 page height would otherwise force jsPDF to slice the tall image across
+ * multiple pages at arbitrary pixel offsets, cutting table rows in half at
+ * the seam. Width stays A4-landscape; height grows to match the content.
  *
  * Uses `html2canvas-pro`, not the plain `html2canvas` package — this app's
  * Tailwind v4 styles resolve to modern CSS color functions (`oklch`/`lab`),
@@ -32,24 +34,16 @@ export function DownloadPdfButton({ targetRef, filename }: { targetRef: RefObjec
       const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
       const imgData = canvas.toDataURL("image/png");
 
-      const pdf = new jsPDF("l", "mm", "a4");
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
+      const a4Landscape = new jsPDF("l", "mm", "a4");
+      const pageWidth = a4Landscape.internal.pageSize.getWidth();
       const imgWidth = pageWidth;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      let heightLeft = imgHeight;
-      let position = 0;
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
+      // Custom [width, height] formats are taken literally by jsPDF only
+      // under "p" — "l" swaps them to force width >= height, which would
+      // undo the A4-landscape width we actually want here.
+      const pdf = new jsPDF({ orientation: "p", unit: "mm", format: [pageWidth, imgHeight] });
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
       pdf.save(filename);
     } finally {
       setIsGenerating(false);
