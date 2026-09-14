@@ -119,7 +119,18 @@ const MAX_POINTS_PER_REQUEST = 100;
  * request — its `waypoints` array carries one snapped location per input
  * coordinate regardless of whether a route between them was found — so this
  * costs the same one-request-per-chunk as routing would.
+ *
+ * A snap landing further than [MAX_SNAP_DISTANCE_METERS] from its raw fix is
+ * discarded in favor of the raw point instead: sparse road coverage near
+ * water or forest can leave the *nearest* real road on the far side of a
+ * river or inlet, so a tight cluster of near-duplicate raw points (GPS noise
+ * while the ranger idled) can each snap to whichever bank's road happens to
+ * be nanometers closer, alternating point to point — drawn as a spurious fan
+ * of legs shuttling across the gap instead of the tight cluster it actually
+ * is. Falling back to the raw coordinate keeps that cluster a cluster.
  */
+const MAX_SNAP_DISTANCE_METERS = 250;
+
 async function snapPointsToRoads(points: PatrolRoutePoint[]): Promise<L.LatLngTuple[]> {
   const result: L.LatLngTuple[] = [];
 
@@ -134,8 +145,11 @@ async function snapPointsToRoads(points: PatrolRoutePoint[]): Promise<L.LatLngTu
       if (!waypoints || waypoints.length !== chunk.length) throw new Error("Unexpected waypoints.");
 
       chunk.forEach((p, i) => {
+        const raw: L.LatLngTuple = [p.latitude, p.longitude];
         const loc = waypoints[i]?.location;
-        result.push(loc ? [loc[1], loc[0]] : [p.latitude, p.longitude]);
+        const snapped: L.LatLngTuple | null = loc ? [loc[1], loc[0]] : null;
+        const tooFar = snapped !== null && haversineMeters(raw, snapped) > MAX_SNAP_DISTANCE_METERS;
+        result.push(snapped && !tooFar ? snapped : raw);
       });
     } catch {
       // No nearby road (or the request failed) — fall back to the raw point.
