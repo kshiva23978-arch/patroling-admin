@@ -5,8 +5,9 @@ import dynamic from "next/dynamic";
 import type { PatrolReportData, PatrolReportEntry } from "@/lib/resources/patrollings";
 import { cardClass } from "@/lib/ui-classes";
 import { patrolStatusBadgeClass, patrolStatusLabel } from "@/lib/patrol-status";
+import { formatMinutes } from "@/lib/duration";
 import { DownloadPdfButton } from "./DownloadPdfButton";
-import { trailColorFor } from "./ReportMap";
+import { trailColorFor } from "./trailColors";
 
 // Leaflet touches `window` at import time, so the map is client-only.
 const ReportMap = dynamic(() => import("./ReportMap").then((m) => m.ReportMap), {
@@ -50,9 +51,10 @@ export function ReportContent({ report, labels }: { report: PatrolReportData; la
         </p>
       )}
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <Stat label="Patrols" value={String(summary.patrol_count)} />
         <Stat label="Distance Covered" value={`${summary.total_distance_km.toFixed(2)} km`} />
+        <Stat label="Total Duration" value={formatMinutes(summary.total_duration_minutes)} />
         <Stat label="Cases Recorded" value={String(summary.case_count)} />
         <Stat label="Incidents Recorded" value={String(summary.incident_count)} />
       </div>
@@ -76,6 +78,7 @@ export function ReportContent({ report, labels }: { report: PatrolReportData; la
                   <th className="px-3 py-2">Range</th>
                   <th className="px-3 py-2 text-right">Patrols</th>
                   <th className="px-3 py-2 text-right">Distance (km)</th>
+                  <th className="px-3 py-2 text-right">Duration</th>
                   <th className="px-3 py-2 text-right">Cases</th>
                   <th className="px-3 py-2 text-right">Incidents</th>
                 </tr>
@@ -86,6 +89,7 @@ export function ReportContent({ report, labels }: { report: PatrolReportData; la
                     <td className="px-3 py-2 text-zinc-900">{row.range}</td>
                     <td className="px-3 py-2 text-right">{row.patrols}</td>
                     <td className="px-3 py-2 text-right">{row.distance_km.toFixed(2)}</td>
+                    <td className="px-3 py-2 text-right">{formatMinutes(row.duration_minutes)}</td>
                     <td className="px-3 py-2 text-right">{row.cases}</td>
                     <td className="px-3 py-2 text-right">{row.incidents}</td>
                   </tr>
@@ -109,6 +113,7 @@ export function ReportContent({ report, labels }: { report: PatrolReportData; la
                 <th className="px-3 py-2">Leader</th>
                 <th className="px-3 py-2">Staff Deployed</th>
                 <th className="px-3 py-2 text-right">Distance (km)</th>
+                <th className="px-3 py-2 text-right">Duration</th>
                 <th className="px-3 py-2 text-right">Cases</th>
                 <th className="px-3 py-2 text-right">Incidents</th>
                 <th className="px-3 py-2">Status</th>
@@ -117,7 +122,7 @@ export function ReportContent({ report, labels }: { report: PatrolReportData; la
             <tbody>
               {entries.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-3 py-6 text-center text-zinc-500">
+                  <td colSpan={11} className="px-3 py-6 text-center text-zinc-500">
                     No patrols match these filters.
                   </td>
                 </tr>
@@ -152,6 +157,7 @@ function PatrolRow({ entry, color }: { entry: PatrolReportEntry; color: string }
       <td className="px-3 py-2">{leader}</td>
       <td className="max-w-xs px-3 py-2 text-zinc-700">{entry.staff_names.length ? entry.staff_names.join(", ") : "—"}</td>
       <td className="px-3 py-2 text-right">{entry.distance_km.toFixed(2)}</td>
+      <td className="whitespace-nowrap px-3 py-2 text-right">{formatMinutes(entry.duration_minutes)}</td>
       <td className="px-3 py-2 text-right">{entry.case_reports.length}</td>
       <td className="px-3 py-2 text-right">{entry.incidents.length}</td>
       <td className="px-3 py-2">

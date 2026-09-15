@@ -4,17 +4,9 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { PatrolReportEntry } from "@/lib/resources/patrollings";
+import { formatMinutes } from "@/lib/duration";
 
-/** Distinct, print-safe trail colours — cycles once there are more patrols than entries here. */
-const TRAIL_PALETTE = [
-  "#2563eb", "#dc2626", "#059669", "#d97706", "#7c3aed",
-  "#0891b2", "#db2777", "#65a30d", "#ea580c", "#4f46e5",
-  "#0d9488", "#b91c1c", "#9333ea", "#ca8a04", "#1d4ed8",
-];
-
-export function trailColorFor(index: number): string {
-  return TRAIL_PALETTE[index % TRAIL_PALETTE.length];
-}
+import { trailColorFor } from "./trailColors";
 
 /** Same 10-minute rule as `LiveMap` — a sync gap draws as a break, not a straight line across it. */
 const TRAIL_GAP_THRESHOLD_MS = 10 * 60 * 1000;
@@ -102,7 +94,7 @@ export function ReportMap({ entries }: { entries: PatrolReportEntry[] }) {
       const leader = entry.patrol_leader?.name || entry.patrol_leader?.employee_id || "—";
       const tooltip = `<strong>${escapeHtml(entry.patrol_id)}</strong><br>${escapeHtml(entry.date)} · ${escapeHtml(
         entry.range?.name ?? "—",
-      )}<br>Leader: ${escapeHtml(leader)} · ${entry.distance_km.toFixed(2)} km`;
+      )}<br>Leader: ${escapeHtml(leader)} · ${entry.distance_km.toFixed(2)} km · ${formatMinutes(entry.duration_minutes)}`;
       const openDetail = () => window.open(`/patrollings/${entry.id}`, "_blank", "noopener");
 
       const segments = splitByGap(entry.route_points);

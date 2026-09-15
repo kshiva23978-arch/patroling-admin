@@ -281,12 +281,15 @@ export interface PatrolReportEntry extends Omit<Patrolling, "comments"> {
   route_points: PatrolRoutePoint[];
   /** Distance along the recorded trail (km) — unlike `total_distance`, set for every patrol, not just odometer-logged vehicle ones. */
   distance_km: number;
+  /** Wall-clock minutes from start to end (to now while in progress); `null` for a patrol that never started. */
+  duration_minutes: number | null;
 }
 
 export interface PatrolReportRangeRow {
   range: string;
   patrols: number;
   distance_km: number;
+  duration_minutes: number;
   cases: number;
   incidents: number;
 }
@@ -299,6 +302,7 @@ export interface PatrolReportData {
     matched_count: number;
     truncated: boolean;
     total_distance_km: number;
+    total_duration_minutes: number;
     case_count: number;
     incident_count: number;
     by_range: PatrolReportRangeRow[];
@@ -322,6 +326,7 @@ export async function getPatrolReport(filters: PatrolReportFilters = {}): Promis
       ...normalizePatrolling({ ...entry, comments: [] }),
       route_points: entry.route_points.map(normalizeRoutePoint),
       distance_km: toNumber(entry.distance_km),
+      duration_minutes: toNumberOrNull(entry.duration_minutes),
     })),
     summary: {
       ...data.summary,
