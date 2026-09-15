@@ -14,7 +14,9 @@ import { MultiSelect } from "./MultiSelect";
  * same "narrow beaches to the selected destination(s)" UX as the list
  * page's own `BeachCleaningFilters`, plus a date range. Destination and
  * Beach are multi-selects (checkbox dropdowns): picking several of either
- * combines them into one report, and nothing picked means all. A beach
+ * combines them into one report, and nothing picked means all — as is
+ * Origin (the litter's country of origin, which narrows the report's rows
+ * rather than which drives are included). A beach
  * only stays selected while its destination is (or no destination is
  * chosen at all), so the two can't contradict each other. Unlike the list filters
  * (which navigate immediately on change), this batches every field behind
@@ -29,7 +31,7 @@ export function ReportFilters({
   currentDestinationIds,
   currentBeachIds,
   currentRangerId,
-  currentCountryId,
+  currentCountryIds,
   currentDateFrom,
   currentDateTo,
 }: {
@@ -40,7 +42,7 @@ export function ReportFilters({
   currentDestinationIds: string[];
   currentBeachIds: string[];
   currentRangerId?: string;
-  currentCountryId?: string;
+  currentCountryIds: string[];
   currentDateFrom?: string;
   currentDateTo?: string;
 }) {
@@ -50,7 +52,7 @@ export function ReportFilters({
   const [destinationIds, setDestinationIds] = useState<string[]>(currentDestinationIds);
   const [beachIds, setBeachIds] = useState<string[]>(currentBeachIds);
   const [rangerId, setRangerId] = useState(currentRangerId ?? "");
-  const [countryId, setCountryId] = useState(currentCountryId ?? "");
+  const [countryIds, setCountryIds] = useState<string[]>(currentCountryIds);
   const [dateFrom, setDateFrom] = useState(currentDateFrom ?? "");
   const [dateTo, setDateTo] = useState(currentDateTo ?? "");
 
@@ -63,7 +65,7 @@ export function ReportFilters({
     for (const id of destinationIds) params.append("destination_id", id);
     for (const id of beachIds) if (beachOptionIds.has(id)) params.append("beach_id", id);
     if (rangerId) params.set("created_by", rangerId);
-    if (countryId) params.set("country_id", countryId);
+    for (const id of countryIds) params.append("country_id", id);
     if (dateFrom) params.set("date_from", dateFrom);
     if (dateTo) params.set("date_to", dateTo);
     const query = params.toString();
@@ -119,15 +121,15 @@ export function ReportFilters({
       </div>
 
       <div className="space-y-1">
-        <label className={labelClass}>Country</label>
-        <select value={countryId} onChange={(e) => setCountryId(e.target.value)} className={`${inputClass} w-auto`}>
-          <option value="">All Countries</option>
-          {countries.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.country_name}
-            </option>
-          ))}
-        </select>
+        <label className={labelClass}>Origin</label>
+        <MultiSelect
+          options={countries.map((c) => ({ value: c.id, label: c.country_name }))}
+          selected={countryIds}
+          onChange={setCountryIds}
+          allLabel="All Origins"
+          noun="origins"
+          disabled={isPending}
+        />
       </div>
 
       <div className="space-y-1">

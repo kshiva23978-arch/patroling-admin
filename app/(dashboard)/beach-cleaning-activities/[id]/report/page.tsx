@@ -29,7 +29,7 @@ export default async function BeachCleaningActivityReportPage({ params }: { para
           &larr; {activity.activity_name}
         </Link>
         <h1 className="text-xl font-semibold text-zinc-900">Waste Segregation Report</h1>
-        <p className="text-sm text-zinc-500">Fixed country × waste-category breakdown for this drive only.</p>
+        <p className="text-sm text-zinc-500">Fixed origin × waste-category breakdown for this drive only.</p>
       </div>
 
       <ReportContent

@@ -93,6 +93,8 @@ export interface BeachCleaningReportFilters {
   beachIds?: string[];
   createdBy?: string;
   countryId?: string;
+  /** Multi-select form of `countryId` — shown as "Origin" in the admin. */
+  countryIds?: string[];
   /** Scopes the report to one specific drive — see the detail page's "Download Report". */
   activityId?: string;
   dateFrom?: string;
@@ -291,6 +293,7 @@ export async function getBeachCleaningReport(filters: BeachCleaningReportFilters
   for (const id of filters.beachIds ?? []) params.append("beach_ids[]", id);
   if (filters.createdBy) params.set("created_by", filters.createdBy);
   if (filters.countryId) params.set("country_id", filters.countryId);
+  for (const id of filters.countryIds ?? []) params.append("country_ids[]", id);
   if (filters.activityId) params.set("activity_id", filters.activityId);
   if (filters.dateFrom) params.set("date_from", filters.dateFrom);
   if (filters.dateTo) params.set("date_to", filters.dateTo);

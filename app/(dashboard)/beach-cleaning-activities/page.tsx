@@ -116,7 +116,7 @@ export default async function BeachCleaningActivitiesPage({
           <p className="mt-2 text-2xl font-semibold text-zinc-900">{totalBagsCollected}</p>
         </div>
         <div className={`p-5 ${cardClass}`}>
-          <p className="text-xs font-medium text-zinc-500">Countries Represented</p>
+          <p className="text-xs font-medium text-zinc-500">Origins Represented</p>
           <p className="mt-2 text-2xl font-semibold text-zinc-900">{weightSummary.by_country.length}</p>
         </div>
       </div>

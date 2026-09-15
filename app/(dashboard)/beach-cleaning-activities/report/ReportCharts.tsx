@@ -89,8 +89,8 @@ export const ReportCharts = forwardRef<ReportChartsHandle, { report: BeachCleani
   useImperativeHandle(ref, () => ({
     getChartImages: () => {
       const charts: { title: string; chart: ChartInstance | null }[] = [
-        { title: "Country-Wise Category Collection", chart: countryByCategoryRef.current },
-        { title: "Country-Wise Total", chart: countryRef.current },
+        { title: "Origin-Wise Category Collection", chart: countryByCategoryRef.current },
+        { title: "Origin-Wise Total", chart: countryRef.current },
         { title: "Category-Wise Distribution", chart: categoryRef.current },
       ];
       return charts
@@ -150,7 +150,7 @@ export const ReportCharts = forwardRef<ReportChartsHandle, { report: BeachCleani
   return (
     <div className="space-y-4">
       <div className={`space-y-3 p-4 ${cardClass}`}>
-        <h2 className="text-sm font-semibold text-zinc-900">Country-Wise Category Collection</h2>
+        <h2 className="text-sm font-semibold text-zinc-900">Origin-Wise Category Collection</h2>
         <div className="h-96">
           <Bar
             ref={countryByCategoryRef}
@@ -180,7 +180,7 @@ export const ReportCharts = forwardRef<ReportChartsHandle, { report: BeachCleani
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className={`space-y-3 p-4 ${cardClass}`}>
-          <h2 className="text-sm font-semibold text-zinc-900">Country-Wise Total</h2>
+          <h2 className="text-sm font-semibold text-zinc-900">Origin-Wise Total</h2>
           <div className="h-80">
             <Bar
               ref={countryRef}

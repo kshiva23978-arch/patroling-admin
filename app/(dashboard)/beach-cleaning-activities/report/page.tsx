@@ -18,7 +18,7 @@ export default async function BeachCleaningReportPage({
     destination_id?: string | string[];
     beach_id?: string | string[];
     created_by?: string;
-    country_id?: string;
+    country_id?: string | string[];
     date_from?: string;
     date_to?: string;
   }>;
@@ -35,12 +35,13 @@ export default async function BeachCleaningReportPage({
   const toList = (value?: string | string[]) => (Array.isArray(value) ? value : value ? [value] : []).filter(Boolean);
   const destinationIds = toList(destinationId);
   const beachIds = toList(beachId);
+  const countryIds = toList(countryId);
 
   const filters: BeachCleaningReportFilters = {
     destinationIds: destinationIds.length > 0 ? destinationIds : undefined,
     beachIds: beachIds.length > 0 ? beachIds : undefined,
     createdBy: createdBy || undefined,
-    countryId: countryId || undefined,
+    countryIds: countryIds.length > 0 ? countryIds : undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   };
@@ -71,7 +72,7 @@ export default async function BeachCleaningReportPage({
           &larr; Beach Cleaning
         </Link>
         <h1 className="text-xl font-semibold text-zinc-900">Waste Segregation Report</h1>
-        <p className="text-sm text-zinc-500">Fixed country × waste-category breakdown, same shape as the paper form.</p>
+        <p className="text-sm text-zinc-500">Fixed origin × waste-category breakdown, same shape as the paper form.</p>
       </div>
 
       <ReportFilters
@@ -82,7 +83,7 @@ export default async function BeachCleaningReportPage({
         currentDestinationIds={destinationIds}
         currentBeachIds={beachIds}
         currentRangerId={filters.createdBy}
-        currentCountryId={filters.countryId}
+        currentCountryIds={countryIds}
         currentDateFrom={filters.dateFrom}
         currentDateTo={filters.dateTo}
       />

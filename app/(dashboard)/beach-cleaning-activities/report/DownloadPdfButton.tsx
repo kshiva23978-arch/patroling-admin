@@ -177,7 +177,7 @@ function addReportTable(
   const cell = (nos: number, kg: number) => `${nos}\n${kg.toFixed(2)} kg`;
 
   const head = [
-    ["Sl.\nNo", "Country", ...categories, ...(totalBags !== undefined ? ["No. of\nBags"] : [])],
+    ["Sl.\nNo", "Origin", ...categories, ...(totalBags !== undefined ? ["No. of\nBags"] : [])],
   ];
 
   const body = countries.map((country, index) => [

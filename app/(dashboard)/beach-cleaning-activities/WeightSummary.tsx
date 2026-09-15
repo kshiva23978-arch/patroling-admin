@@ -14,7 +14,7 @@ export function WeightSummary({ summary }: { summary: BeachCleaningWeightSummary
   return (
     <div className="grid gap-4 sm:grid-cols-3">
       <WeightTable title="Category-Wise Weight" rows={summary.by_category} />
-      <WeightTable title="Country-Wise Weight" rows={summary.by_country} />
+      <WeightTable title="Origin-Wise Weight" rows={summary.by_country} />
       <WeightTable title="Destination-Wise Weight" rows={summary.by_destination} />
     </div>
   );

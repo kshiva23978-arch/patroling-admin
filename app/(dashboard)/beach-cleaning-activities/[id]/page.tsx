@@ -76,7 +76,7 @@ export default async function BeachCleaningActivityDetailPage({ params }: { para
 
       <div className="grid gap-4 lg:grid-cols-3">
         <ReportTable title="Waste By Category" rows={activity.report?.by_category ?? []} unit="No.s" />
-        <ReportTable title="Country-Wise Collection" rows={activity.report?.by_country ?? []} unit="No.s" />
+        <ReportTable title="Origin-Wise Collection" rows={activity.report?.by_country ?? []} unit="No.s" />
         <ReportTable title="Category-Wise Weight" rows={activity.report?.by_category_weight ?? []} unit="kg" />
       </div>
 

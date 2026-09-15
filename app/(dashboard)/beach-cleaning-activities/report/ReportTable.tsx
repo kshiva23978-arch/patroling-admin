@@ -44,7 +44,7 @@ export function ReportTable({
                 Sl. No
               </th>
               <th rowSpan={2} className={headerCellClass + " min-w-[110px] text-left"}>
-                Country
+                Origin
               </th>
               {categories.map((category) => (
                 <th key={category} className={categoryHeaderCellClass}>
@@ -105,7 +105,7 @@ export function ReportTable({
         {activityCount} drive{activityCount === 1 ? "" : "s"} · Grand total {grandTotal} Nos.
         {showWeight && ` (${(weightGrandTotal ?? 0).toFixed(2)} kg)`}
         {totalBags !== undefined &&
-          " · No. of Bags is recorded per drive, not per country — shown here as a single total, not a per-row breakdown."}
+          " · No. of Bags is recorded per drive, not per origin — shown here as a single total, not a per-row breakdown."}
       </p>
     </div>
   );
