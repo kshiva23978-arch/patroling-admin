@@ -259,3 +259,79 @@ export async function listRoutePoints(id: string, since?: string): Promise<Patro
   );
   return points.map(normalizeRoutePoint);
 }
+
+// ---------------------------------------------------------------------------
+// Patrol Report (admin `/patrollings/report`)
+// ---------------------------------------------------------------------------
+
+/** Every filter is a list; an empty list means "all". See `AdminPatrolEntryController::report`. */
+export interface PatrolReportFilters {
+  rangeIds?: string[];
+  staffNames?: string[];
+  /** `yes` / `no` — both or neither selected means no filter. */
+  caseRecorded?: ("yes" | "no")[];
+  incidentRecorded?: ("yes" | "no")[];
+  statuses?: PatrolStatus[];
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+/** A list-shape patrol plus its full GPS trail and GPS-derived distance, as the report returns it. */
+export interface PatrolReportEntry extends Omit<Patrolling, "comments"> {
+  route_points: PatrolRoutePoint[];
+  /** Distance along the recorded trail (km) — unlike `total_distance`, set for every patrol, not just odometer-logged vehicle ones. */
+  distance_km: number;
+}
+
+export interface PatrolReportRangeRow {
+  range: string;
+  patrols: number;
+  distance_km: number;
+  cases: number;
+  incidents: number;
+}
+
+export interface PatrolReportData {
+  entries: PatrolReportEntry[];
+  summary: {
+    patrol_count: number;
+    /** Patrols that matched the filters, which can exceed `patrol_count` when the server capped the result. */
+    matched_count: number;
+    truncated: boolean;
+    total_distance_km: number;
+    case_count: number;
+    incident_count: number;
+    by_range: PatrolReportRangeRow[];
+  };
+}
+
+export async function getPatrolReport(filters: PatrolReportFilters = {}): Promise<PatrolReportData> {
+  const params = new URLSearchParams();
+  for (const id of filters.rangeIds ?? []) params.append("range_ids[]", id);
+  for (const name of filters.staffNames ?? []) params.append("staff_names[]", name);
+  for (const v of filters.caseRecorded ?? []) params.append("case_recorded[]", v);
+  for (const v of filters.incidentRecorded ?? []) params.append("incident_recorded[]", v);
+  for (const s of filters.statuses ?? []) params.append("status[]", s);
+  if (filters.dateFrom) params.set("date_from", filters.dateFrom);
+  if (filters.dateTo) params.set("date_to", filters.dateTo);
+
+  const data = await apiFetch<PatrolReportData>(`/admin/patrol-entries/report?${params.toString()}`);
+  return {
+    ...data,
+    entries: data.entries.map((entry) => ({
+      ...normalizePatrolling({ ...entry, comments: [] }),
+      route_points: entry.route_points.map(normalizeRoutePoint),
+      distance_km: toNumber(entry.distance_km),
+    })),
+    summary: {
+      ...data.summary,
+      total_distance_km: toNumber(data.summary.total_distance_km),
+      by_range: data.summary.by_range.map((row) => ({ ...row, distance_km: toNumber(row.distance_km) })),
+    },
+  };
+}
+
+/** Distinct staff names across every patrol the admin can see — options for the report's Staff filter. */
+export function getPatrolReportOptions(): Promise<{ staff_names: string[] }> {
+  return apiFetch<{ staff_names: string[] }>("/admin/patrol-entries/report-options");
+}

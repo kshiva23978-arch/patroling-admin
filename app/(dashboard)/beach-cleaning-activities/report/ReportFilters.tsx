@@ -7,7 +7,7 @@ import type { Destination } from "@/lib/resources/destinations";
 import type { Beach } from "@/lib/resources/beaches";
 import type { Country } from "@/lib/resources/countries";
 import type { BeachCleaningRangerOption } from "@/lib/resources/beach-cleaning-activities";
-import { MultiSelect } from "./MultiSelect";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 
 /**
  * Destination / Beach / Ranger / date-range filters for the report page —

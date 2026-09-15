@@ -4,6 +4,7 @@ import { listAllRanges } from "@/lib/resources/ranges";
 import { PatrollingsTable } from "./PatrollingsTable";
 import { ActivityTable } from "./ActivityTable";
 import { RangeFilter } from "./RangeFilter";
+import { linkButtonClass } from "@/lib/ui-classes";
 
 const STATUS_TABS: { value: PatrolStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -36,6 +37,9 @@ export default async function PatrollingsPage({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-zinc-900">Patrollings</h1>
+        <Link href="/patrollings/report" className={linkButtonClass}>
+          Generate Report
+        </Link>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
