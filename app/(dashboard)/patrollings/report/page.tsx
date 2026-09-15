@@ -81,7 +81,7 @@ export default async function PatrolReportPage({
 
       <ReportFilters
         ranges={ranges}
-        staffOptions={options.staff_names}
+        staffOptions={options.staff}
         current={{ rangeIds, staffNames, caseRecorded, incidentRecorded, statuses, dateFrom, dateTo }}
       />
 

@@ -331,7 +331,13 @@ export async function getPatrolReport(filters: PatrolReportFilters = {}): Promis
   };
 }
 
-/** Distinct staff names across every patrol the admin can see — options for the report's Staff filter. */
-export function getPatrolReportOptions(): Promise<{ staff_names: string[] }> {
-  return apiFetch<{ staff_names: string[] }>("/admin/patrol-entries/report-options");
+/** One free-typed staff name and the range(s) it has been deployed in — see `AdminPatrolEntryController::reportOptions`. */
+export interface PatrolReportStaffOption {
+  name: string;
+  ranges: PatrolRefShape[];
+}
+
+/** Distinct staff names (with their ranges) across every patrol the admin can see — options for the report's Staff filter. */
+export function getPatrolReportOptions(): Promise<{ staff: PatrolReportStaffOption[] }> {
+  return apiFetch<{ staff: PatrolReportStaffOption[] }>("/admin/patrol-entries/report-options");
 }
