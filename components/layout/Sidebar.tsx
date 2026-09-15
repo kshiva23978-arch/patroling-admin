@@ -69,6 +69,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admins", label: "Admins", section: "admins" },
       { href: "/users", label: "Field Users", section: "users" },
       { href: "/login-logs", label: "Login Logs", section: "login_logs", masterOnly: true },
+      { href: "/app-versions", label: "App Versions", section: "app_versions", masterOnly: true },
     ],
   },
 ];
