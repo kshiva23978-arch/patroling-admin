@@ -12,7 +12,7 @@ import {
   Title,
 } from "chart.js";
 import { Bar, Pie } from "react-chartjs-2";
-import type { Chart as ChartInstance } from "chart.js";
+import type { Chart as ChartInstance, TooltipItem } from "chart.js";
 import type { BeachCleaningReportData } from "@/lib/resources/beach-cleaning-activities";
 import { cardClass } from "@/lib/ui-classes";
 
@@ -27,6 +27,28 @@ const PALETTE = [
 function colorFor(index: number): string {
   return PALETTE[index % PALETTE.length];
 }
+
+const formatKg = (kg: number) => `${kg.toFixed(2)} kg`;
+
+/**
+ * Tooltip label showing both figures the report tracks for a bar/slice —
+ * the count (what the chart plots) and the matching weight (looked up from
+ * the report's parallel `weight_*` aggregates), e.g.
+ * `Cosmetic/Food Packet: 145 Nos. · 3.20 kg`. [nameFor] picks what to call
+ * the hovered item (the category for a stacked series, the axis label
+ * otherwise); [kgFor] finds its weight.
+ */
+function labelWithKg<T extends "bar" | "pie">(
+  nameFor: (item: TooltipItem<T>) => string,
+  kgFor: (item: TooltipItem<T>) => number,
+) {
+  return (item: TooltipItem<T>) =>
+    `${nameFor(item)}: ${item.formattedValue} Nos. · ${formatKg(kgFor(item))}`;
+}
+
+/** The category a stacked-bar series stands for — its dataset label. */
+const seriesName = (item: TooltipItem<"bar">) => String(item.dataset.label ?? "");
+const axisName = (item: TooltipItem<"bar" | "pie">) => String(item.label);
 
 /** One chart, exported as a PNG data URL — see [ReportChartsHandle.getChartImages]. */
 export interface ReportChartImage {
@@ -136,7 +158,17 @@ export const ReportCharts = forwardRef<ReportChartsHandle, { report: BeachCleani
             options={{
               responsive: true,
               maintainAspectRatio: false,
-              plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 10 } } } },
+              plugins: {
+                legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 10 } } },
+                tooltip: {
+                  callbacks: {
+                    label: labelWithKg<"bar">(
+                      seriesName,
+                      (item) => report.weight_matrix[axisName(item)]?.[seriesName(item)] ?? 0,
+                    ),
+                  },
+                },
+              },
               scales: {
                 x: { stacked: true, ticks: { autoSkip: false, maxRotation: 90, minRotation: 60 } },
                 y: { stacked: true },
@@ -156,7 +188,14 @@ export const ReportCharts = forwardRef<ReportChartsHandle, { report: BeachCleani
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      label: labelWithKg<"bar">(axisName, (item) => report.weight_country_totals[axisName(item)] ?? 0),
+                    },
+                  },
+                },
                 scales: { x: { ticks: { autoSkip: false, maxRotation: 90, minRotation: 60 } } },
               }}
             />
@@ -172,7 +211,14 @@ export const ReportCharts = forwardRef<ReportChartsHandle, { report: BeachCleani
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { position: "right", labels: { boxWidth: 12, font: { size: 10 } } } },
+                plugins: {
+                  legend: { position: "right", labels: { boxWidth: 12, font: { size: 10 } } },
+                  tooltip: {
+                    callbacks: {
+                      label: labelWithKg<"pie">(axisName, (item) => report.weight_category_totals[axisName(item)] ?? 0),
+                    },
+                  },
+                },
               }}
             />
           </div>

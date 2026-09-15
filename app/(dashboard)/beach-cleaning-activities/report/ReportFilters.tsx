@@ -7,11 +7,16 @@ import type { Destination } from "@/lib/resources/destinations";
 import type { Beach } from "@/lib/resources/beaches";
 import type { Country } from "@/lib/resources/countries";
 import type { BeachCleaningRangerOption } from "@/lib/resources/beach-cleaning-activities";
+import { MultiSelect } from "./MultiSelect";
 
 /**
  * Destination / Beach / Ranger / date-range filters for the report page —
- * same "narrow beaches to the selected destination" UX as the list page's
- * own `BeachCleaningFilters`, plus a date range. Unlike the list filters
+ * same "narrow beaches to the selected destination(s)" UX as the list
+ * page's own `BeachCleaningFilters`, plus a date range. Destination and
+ * Beach are multi-selects (checkbox dropdowns): picking several of either
+ * combines them into one report, and nothing picked means all. A beach
+ * only stays selected while its destination is (or no destination is
+ * chosen at all), so the two can't contradict each other. Unlike the list filters
  * (which navigate immediately on change), this batches every field behind
  * a "Generate Report" button — re-running the aggregation on every
  * keystroke of a date field would be wasteful.
@@ -21,8 +26,8 @@ export function ReportFilters({
   beaches,
   rangers,
   countries,
-  currentDestinationId,
-  currentBeachId,
+  currentDestinationIds,
+  currentBeachIds,
   currentRangerId,
   currentCountryId,
   currentDateFrom,
@@ -32,8 +37,8 @@ export function ReportFilters({
   beaches: Beach[];
   rangers: BeachCleaningRangerOption[];
   countries: Country[];
-  currentDestinationId?: string;
-  currentBeachId?: string;
+  currentDestinationIds: string[];
+  currentBeachIds: string[];
   currentRangerId?: string;
   currentCountryId?: string;
   currentDateFrom?: string;
@@ -42,22 +47,21 @@ export function ReportFilters({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const [destinationId, setDestinationId] = useState(currentDestinationId ?? "");
-  const [beachId, setBeachId] = useState(currentBeachId ?? "");
+  const [destinationIds, setDestinationIds] = useState<string[]>(currentDestinationIds);
+  const [beachIds, setBeachIds] = useState<string[]>(currentBeachIds);
   const [rangerId, setRangerId] = useState(currentRangerId ?? "");
   const [countryId, setCountryId] = useState(currentCountryId ?? "");
   const [dateFrom, setDateFrom] = useState(currentDateFrom ?? "");
   const [dateTo, setDateTo] = useState(currentDateTo ?? "");
 
-  const beachOptions = destinationId ? beaches.filter((b) => b.destination_id === destinationId) : beaches;
+  const beachOptions = destinationIds.length > 0 ? beaches.filter((b) => destinationIds.includes(b.destination_id)) : beaches;
+  const beachOptionIds = new Set(beachOptions.map((b) => b.id));
   const rangerLabel = (r: BeachCleaningRangerOption) => r.name || r.employee_id;
 
   const generate = () => {
     const params = new URLSearchParams();
-    if (destinationId) params.set("destination_id", destinationId);
-    if (beachId && beaches.some((b) => b.id === beachId && b.destination_id === destinationId)) {
-      params.set("beach_id", beachId);
-    }
+    for (const id of destinationIds) params.append("destination_id", id);
+    for (const id of beachIds) if (beachOptionIds.has(id)) params.append("beach_id", id);
     if (rangerId) params.set("created_by", rangerId);
     if (countryId) params.set("country_id", countryId);
     if (dateFrom) params.set("date_from", dateFrom);
@@ -72,33 +76,34 @@ export function ReportFilters({
     <div className="flex flex-wrap items-end gap-3">
       <div className="space-y-1">
         <label className={labelClass}>Destination</label>
-        <select
-          value={destinationId}
-          onChange={(e) => {
-            setDestinationId(e.target.value);
-            setBeachId("");
+        <MultiSelect
+          options={destinations.map((d) => ({ value: d.id, label: d.name }))}
+          selected={destinationIds}
+          onChange={(next) => {
+            setDestinationIds(next);
+            // Drop any beach whose destination is no longer part of the selection.
+            if (next.length > 0) {
+              setBeachIds((prev) =>
+                prev.filter((id) => beaches.some((b) => b.id === id && next.includes(b.destination_id))),
+              );
+            }
           }}
-          className={`${inputClass} w-auto`}
-        >
-          <option value="">All Destinations</option>
-          {destinations.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name}
-            </option>
-          ))}
-        </select>
+          allLabel="All Destinations"
+          noun="destinations"
+          disabled={isPending}
+        />
       </div>
 
       <div className="space-y-1">
         <label className={labelClass}>Beach</label>
-        <select value={beachId} onChange={(e) => setBeachId(e.target.value)} className={`${inputClass} w-auto`}>
-          <option value="">All Beaches</option>
-          {beachOptions.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name}
-            </option>
-          ))}
-        </select>
+        <MultiSelect
+          options={beachOptions.map((b) => ({ value: b.id, label: b.name }))}
+          selected={beachIds.filter((id) => beachOptionIds.has(id))}
+          onChange={setBeachIds}
+          allLabel="All Beaches"
+          noun="beaches"
+          disabled={isPending}
+        />
       </div>
 
       <div className="space-y-1">

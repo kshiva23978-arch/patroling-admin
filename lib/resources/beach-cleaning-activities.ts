@@ -88,6 +88,9 @@ export interface BeachCleaningRangerOption {
 export interface BeachCleaningReportFilters {
   destinationId?: string;
   beachId?: string;
+  /** Multi-select forms — the report page lets several destinations/beaches be combined into one report. */
+  destinationIds?: string[];
+  beachIds?: string[];
   createdBy?: string;
   countryId?: string;
   /** Scopes the report to one specific drive — see the detail page's "Download Report". */
@@ -284,6 +287,8 @@ export async function getBeachCleaningReport(filters: BeachCleaningReportFilters
   const params = new URLSearchParams();
   if (filters.destinationId) params.set("destination_id", filters.destinationId);
   if (filters.beachId) params.set("beach_id", filters.beachId);
+  for (const id of filters.destinationIds ?? []) params.append("destination_ids[]", id);
+  for (const id of filters.beachIds ?? []) params.append("beach_ids[]", id);
   if (filters.createdBy) params.set("created_by", filters.createdBy);
   if (filters.countryId) params.set("country_id", filters.countryId);
   if (filters.activityId) params.set("activity_id", filters.activityId);

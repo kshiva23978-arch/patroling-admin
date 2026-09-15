@@ -14,8 +14,9 @@ export default async function BeachCleaningReportPage({
   searchParams,
 }: {
   searchParams: Promise<{
-    destination_id?: string;
-    beach_id?: string;
+    /** Repeated once per selected destination/beach (`?destination_id=a&destination_id=b`). */
+    destination_id?: string | string[];
+    beach_id?: string | string[];
     created_by?: string;
     country_id?: string;
     date_from?: string;
@@ -31,9 +32,13 @@ export default async function BeachCleaningReportPage({
     date_to: dateTo,
   } = await searchParams;
 
+  const toList = (value?: string | string[]) => (Array.isArray(value) ? value : value ? [value] : []).filter(Boolean);
+  const destinationIds = toList(destinationId);
+  const beachIds = toList(beachId);
+
   const filters: BeachCleaningReportFilters = {
-    destinationId: destinationId || undefined,
-    beachId: beachId || undefined,
+    destinationIds: destinationIds.length > 0 ? destinationIds : undefined,
+    beachIds: beachIds.length > 0 ? beachIds : undefined,
     createdBy: createdBy || undefined,
     countryId: countryId || undefined,
     dateFrom: dateFrom || undefined,
@@ -48,8 +53,14 @@ export default async function BeachCleaningReportPage({
     listAllCountries(),
   ]);
 
-  const destinationName = destinations.find((d) => d.id === filters.destinationId)?.name;
-  const beachName = beaches.find((b) => b.id === filters.beachId)?.name;
+  // Comma-joined labels for the summary card / PDF header — `undefined`
+  // when nothing is selected so those fall back to "All …".
+  const namesFor = <T extends { id: string; name: string }>(items: T[], ids: string[]) => {
+    const names = ids.map((id) => items.find((i) => i.id === id)?.name).filter((n): n is string => Boolean(n));
+    return names.length > 0 ? names.join(", ") : undefined;
+  };
+  const destinationName = namesFor(destinations, destinationIds);
+  const beachName = namesFor(beaches, beachIds);
   const rangerOption = rangers.find((r) => r.id === filters.createdBy);
   const rangerName = rangerOption ? rangerOption.name || rangerOption.employee_id : undefined;
 
@@ -68,8 +79,8 @@ export default async function BeachCleaningReportPage({
         beaches={beaches}
         rangers={rangers}
         countries={countries}
-        currentDestinationId={filters.destinationId}
-        currentBeachId={filters.beachId}
+        currentDestinationIds={destinationIds}
+        currentBeachIds={beachIds}
         currentRangerId={filters.createdBy}
         currentCountryId={filters.countryId}
         currentDateFrom={filters.dateFrom}

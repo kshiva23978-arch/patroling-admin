@@ -23,7 +23,8 @@ export function ReportContent({
   dateTo?: string;
 }) {
   const filenameParts = ["waste-segregation-report", destinationName, beachName, rangerName].filter(Boolean);
-  const filename = `${filenameParts.join("-").toLowerCase().replace(/\s+/g, "-")}.pdf`;
+  // Multi-selects join names with ", " — collapse anything non-alphanumeric to a dash.
+  const filename = `${filenameParts.join("-").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}.pdf`;
   const chartsRef = useRef<ReportChartsHandle>(null);
 
   return (
