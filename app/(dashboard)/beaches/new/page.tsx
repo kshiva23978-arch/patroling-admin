@@ -30,6 +30,7 @@ export default async function NewBeachPage() {
             helpText: "Optional. Shows this beach in one other destination's beach list too.",
           },
           { name: "name", label: "Name", type: "text" },
+          { name: "officerName", label: "Beach Officer Name", type: "text" },
           { name: "status", label: "Active", type: "switch" },
         ]}
       />

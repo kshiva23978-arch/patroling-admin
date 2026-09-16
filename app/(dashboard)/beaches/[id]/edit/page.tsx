@@ -16,6 +16,7 @@ export default async function EditBeachPage({ params }: { params: Promise<{ id: 
           destinationId: beach.destination_id,
           sharedDestinationId: beach.shared_destination_id ?? "",
           name: beach.name,
+          officerName: beach.officer_name ?? "",
           status: beach.status,
         }}
         action={updateBeachAction.bind(null, id)}
@@ -36,6 +37,7 @@ export default async function EditBeachPage({ params }: { params: Promise<{ id: 
             helpText: "Optional. Shows this beach in one other destination's beach list too.",
           },
           { name: "name", label: "Name", type: "text" },
+          { name: "officerName", label: "Beach Officer Name", type: "text" },
           { name: "status", label: "Active", type: "switch" },
         ]}
       />

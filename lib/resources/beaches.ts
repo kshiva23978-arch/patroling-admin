@@ -8,6 +8,7 @@ export interface Beach {
   destination_id: string;
   shared_destination_id: string | null;
   name: string;
+  officer_name: string | null;
   status: boolean;
   created_at: string | null;
   updated_at: string | null;
@@ -39,6 +40,7 @@ export function createBeach(input: BeachCreateInput): Promise<Beach> {
       destination_id: input.destinationId,
       shared_destination_id: input.sharedDestinationId || null,
       name: input.name,
+      officer_name: input.officerName || null,
       status: input.status,
     }),
   });
@@ -51,6 +53,7 @@ export function updateBeach(id: string, input: BeachUpdateInput): Promise<Beach>
       destination_id: input.destinationId,
       shared_destination_id: input.sharedDestinationId || null,
       name: input.name,
+      officer_name: input.officerName || null,
       status: input.status,
     }),
   });

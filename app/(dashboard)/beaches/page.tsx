@@ -34,6 +34,7 @@ export default async function BeachesPage({
         </div>
       ),
     },
+    { header: "Beach Officer", render: (b) => <span>{b.officer_name || "—"}</span> },
     { header: "Status", render: (b) => <span className={badgeClass(b.status)}>{b.status ? "Active" : "Inactive"}</span> },
     {
       header: "Actions",

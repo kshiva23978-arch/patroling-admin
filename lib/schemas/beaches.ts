@@ -18,17 +18,25 @@ export const beachCreateSchema = z
     destinationId: z.string().min(1, "Destination is required."),
     sharedDestinationId: z.string().optional(),
     name: z.string().trim().min(1, "Name is required.").max(255),
+    officerName: z.string().trim().max(255).optional(),
     status: z.boolean(),
   })
   .superRefine(sharedDestinationRefinement);
 export type BeachCreateInput = z.infer<typeof beachCreateSchema>;
-export const beachCreateDefaults: BeachCreateInput = { destinationId: "", sharedDestinationId: "", name: "", status: true };
+export const beachCreateDefaults: BeachCreateInput = {
+  destinationId: "",
+  sharedDestinationId: "",
+  name: "",
+  officerName: "",
+  status: true,
+};
 
 export const beachUpdateSchema = z
   .object({
     destinationId: z.string().min(1, "Destination is required."),
     sharedDestinationId: z.string().optional(),
     name: z.string().trim().min(1, "Name is required.").max(255),
+    officerName: z.string().trim().max(255).optional(),
     status: z.boolean(),
   })
   .superRefine(sharedDestinationRefinement);
