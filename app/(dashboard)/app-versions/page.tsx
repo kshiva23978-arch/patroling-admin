@@ -1,5 +1,7 @@
 import { listAppVersions } from "@/lib/resources/app-versions";
+import { listHomeMedia } from "@/lib/resources/home-media";
 import { AppVersionForm } from "./AppVersionForm";
+import { HomeMediaManager } from "./HomeMediaManager";
 
 /**
  * Field-app version control (master admins only). After publishing a new
@@ -10,7 +12,7 @@ import { AppVersionForm } from "./AppVersionForm";
  * time the app opens with a connection.
  */
 export default async function AppVersionsPage() {
-  const versions = await listAppVersions();
+  const [versions, homeMedia] = await Promise.all([listAppVersions(), listHomeMedia()]);
 
   return (
     <div className="space-y-4">
@@ -27,6 +29,8 @@ export default async function AppVersionsPage() {
           <AppVersionForm key={version.platform} version={version} />
         ))}
       </div>
+
+      <HomeMediaManager items={homeMedia} />
     </div>
   );
 }

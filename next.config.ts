@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
   // the URL. Add this machine's LAN IP so dev-mode access from other
   // devices works.
   allowedDevOrigins: ["192.168.1.40"],
+  // The App Versions page uploads home-screen images (≤ 10 MB) through a
+  // Server Action; the default 1 MB body limit would reject them before
+  // they ever reached the backend, which enforces the real limits.
+  experimental: {
+    serverActions: { bodySizeLimit: "12mb" },
+  },
 };
 
 export default nextConfig;

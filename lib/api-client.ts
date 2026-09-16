@@ -70,7 +70,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<Enve
 
   const headers: Record<string, string> = {
     Accept: "application/json",
-    ...(options.body ? { "Content-Type": "application/json" } : {}),
+    // A FormData body must set its own multipart boundary — leave the
+    // header off so fetch generates it.
+    ...(options.body && !(options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers as Record<string, string> | undefined),
   };
