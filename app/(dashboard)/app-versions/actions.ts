@@ -26,7 +26,8 @@ export async function updateAppVersionAction(platform: AppPlatform, input: AppVe
   return { success: true };
 }
 
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+/** 1 MB for everything — the app downloads this before login on mobile data, and Vercel 413s bodies over ~4.5 MB anyway. */
+const MAX_IMAGE_BYTES = 1 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 1 * 1024 * 1024;
 /** Mirrors the backend's allow-list — the server re-checks extension *and* content, this is just fast feedback. */
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "mp4", "webm"];
@@ -46,7 +47,7 @@ export async function uploadHomeMediaAction(form: FormData): Promise<ActionResul
     return { success: false, message: "Videos must be 1 MB or smaller." };
   }
   if (!isVideo && file.size > MAX_IMAGE_BYTES) {
-    return { success: false, message: "Images must be 10 MB or smaller." };
+    return { success: false, message: "Images must be 1 MB or smaller." };
   }
 
   const payload = new FormData();

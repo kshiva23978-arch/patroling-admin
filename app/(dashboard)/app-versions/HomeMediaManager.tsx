@@ -6,6 +6,14 @@ import { cardClass, inputClass, labelClass, primaryButtonClass, secondaryButtonC
 import type { HomeMedia } from "@/lib/resources/home-media";
 import { deleteHomeMediaAction, setHomeMediaActiveAction, uploadHomeMediaAction } from "./actions";
 
+/**
+ * Hard cap for any home-screen file. Vercel rejects request bodies over
+ * ~4.5 MB with a 413 before the Server Action runs, and the app downloads
+ * this before login on mobile data, so keep it small. Checking here gives a
+ * clear message instead of a failed request that crashes the page.
+ */
+const MAX_UPLOAD_BYTES = 1 * 1024 * 1024;
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -34,9 +42,25 @@ export function HomeMediaManager({ items }: { items: HomeMedia[] }) {
 
   const upload = (form: FormData) => {
     setError(null);
+    const file = form.get("file");
+    if (file instanceof File && file.size > MAX_UPLOAD_BYTES) {
+      setError(
+        `This file is ${formatBytes(file.size)} — uploads must be 1 MB or smaller. Please compress it and try again.`,
+      );
+      return;
+    }
     if (activateOnUpload) form.set("activate", "1");
     startTransition(async () => {
-      const result = await uploadHomeMediaAction(form);
+      let result;
+      try {
+        result = await uploadHomeMediaAction(form);
+      } catch {
+        // A rejected call means the request never got a proper response
+        // (413 from the host, network drop, timeout) — show it inline
+        // rather than letting it bubble to the page's error boundary.
+        setError("Upload failed — the file may be too large for the server (max 1 MB), or the connection dropped. Please try a smaller file.");
+        return;
+      }
       if (!result.success) {
         setError(result.message);
         return;
@@ -50,7 +74,13 @@ export function HomeMediaManager({ items }: { items: HomeMedia[] }) {
   const run = (label: string, action: () => Promise<{ success: boolean; message?: string }>) => {
     setError(null);
     startTransition(async () => {
-      const result = await action();
+      let result;
+      try {
+        result = await action();
+      } catch {
+        setError("Something went wrong. Please try again.");
+        return;
+      }
       if (!result.success) {
         setError(result.message ?? "Something went wrong.");
         return;
@@ -100,7 +130,7 @@ export function HomeMediaManager({ items }: { items: HomeMedia[] }) {
               className="block w-full text-sm text-zinc-700 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-900 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700"
             />
             <p className="text-xs text-zinc-500">
-              JPG, PNG or WebP up to 10 MB; MP4 or WebM up to <strong>1 MB</strong> (a few seconds, compressed). Portrait 9:16 fits phones best.
+              JPG, PNG, WebP, MP4 or WebM up to <strong>1 MB</strong> (compress images; keep videos to a few seconds). Portrait 9:16 fits phones best.
             </p>
           </div>
           <div className="space-y-1">
