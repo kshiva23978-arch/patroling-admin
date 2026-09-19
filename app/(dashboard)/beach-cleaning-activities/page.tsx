@@ -54,6 +54,13 @@ export default async function BeachCleaningActivitiesPage({
 
   const totalCleans = listing.meta?.total ?? beachStats.reduce((sum, s) => sum + s.activities_count, 0);
   const totalBagsCollected = beachStats.reduce((sum, s) => sum + s.bags_collected, 0);
+  // Each drive's own actually-weighed `bca_total_weight_kg` (from `stats()`),
+  // not `weightSummary.total_weight_kg` — that one sums the segregation
+  // rows' `weight_kg`, which are only ever a ~10% sample of what a drive
+  // actually collected (see AdminBeachCleaningActivityController::report's
+  // own doc comment on `bca_segregation_percent`), so it reads far lower
+  // than the real total.
+  const totalCollectedKg = beachStats.reduce((sum, s) => sum + s.total_weight_kg, 0);
 
   return (
     <div className="space-y-4">
@@ -109,7 +116,7 @@ export default async function BeachCleaningActivitiesPage({
         </div>
         <div className={`p-5 ${cardClass}`}>
           <p className="text-xs font-medium text-zinc-500">Total Collection (kg)</p>
-          <p className="mt-2 text-2xl font-semibold text-zinc-900">{weightSummary.total_weight_kg.toFixed(1)}</p>
+          <p className="mt-2 text-2xl font-semibold text-zinc-900">{totalCollectedKg.toFixed(1)}</p>
         </div>
         <div className={`p-5 ${cardClass}`}>
           <p className="text-xs font-medium text-zinc-500">Total Bags Collected</p>
