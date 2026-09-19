@@ -146,6 +146,8 @@ export interface BeachCleaningReportData {
   remaining_weight_country_totals: Record<string, number>;
   remaining_weight_category_totals: Record<string, number>;
   remaining_weight_grand_total: number;
+  /** One entry per drive matching the filters — powers the report page's drive-wise cards. */
+  activities: BeachCleaningActivity[];
 }
 
 export interface BeachCleaningWeightRow {
@@ -310,6 +312,7 @@ export async function getBeachCleaningReport(filters: BeachCleaningReportFilters
 
   return {
     ...report,
+    activities: report.activities.map(normalizeActivity),
     matrix: Object.fromEntries(Object.entries(report.matrix).map(([country, row]) => [country, normalizeRecord(row)])),
     country_totals: normalizeRecord(report.country_totals),
     category_totals: normalizeRecord(report.category_totals),

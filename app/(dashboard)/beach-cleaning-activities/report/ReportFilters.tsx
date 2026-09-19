@@ -90,8 +90,8 @@ export function ReportFilters({
               );
             }
           }}
-          allLabel="All Destinations"
-          noun="destinations"
+          allLabel="All Origins"
+          noun="origins"
           disabled={isPending}
         />
       </div>
@@ -111,7 +111,7 @@ export function ReportFilters({
       <div className="space-y-1">
         <label className={labelClass}>Division</label>
         <select value={rangerId} onChange={(e) => setRangerId(e.target.value)} className={`${inputClass} w-auto`}>
-          <option value="">All Rangers</option>
+          <option value="">All Divisions</option>
           {rangers.map((r) => (
             <option key={r.id} value={r.id}>
               {rangerLabel(r)}

@@ -64,8 +64,8 @@ export function DownloadPdfButton({
       autoTable(doc, {
         startY: 20,
         margin: { left: marginX, right: marginX },
-        head: [["Destination", "Beach", "Ranger", "Date Range"]],
-        body: [[destinationName ?? "All Destinations", beachName ?? "All Beaches", rangerName ?? "All Rangers", dateRange]],
+        head: [["Origin", "Beach", "Division", "Date Range"]],
+        body: [[destinationName ?? "All Origins", beachName ?? "All Beaches", rangerName ?? "All Divisions", dateRange]],
         styles: { fontSize: 8, cellPadding: 2, lineColor: [220, 220, 220], lineWidth: 0.1 },
         headStyles: { fillColor: [244, 244, 245], textColor: [113, 113, 122], fontStyle: "bold", fontSize: 7 },
         bodyStyles: { textColor: [24, 24, 27] },
@@ -79,8 +79,8 @@ export function DownloadPdfButton({
         head: [["Drives", "Recorded", "Estimated Remaining (~90%)", "No. of Bags", "Overall Weight"]],
         body: [[
           String(report.activity_count),
-          `${report.grand_total} Nos. (${report.weight_grand_total.toFixed(2)} kg)`,
-          `${report.remaining_grand_total} Nos. (${report.remaining_weight_grand_total.toFixed(2)} kg)`,
+          `${report.weight_grand_total.toFixed(2)} kg`,
+          `${report.remaining_weight_grand_total.toFixed(2)} kg`,
           String(report.total_bags),
           `${report.total_weight_kg.toFixed(2)} kg`,
         ]],

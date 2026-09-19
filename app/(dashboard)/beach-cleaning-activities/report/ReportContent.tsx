@@ -6,6 +6,7 @@ import { cardClass } from "@/lib/ui-classes";
 import { ReportTable } from "./ReportTable";
 import { ReportCharts, type ReportChartsHandle } from "./ReportCharts";
 import { DownloadPdfButton } from "./DownloadPdfButton";
+import { DriveWiseSection } from "./DriveWiseSection";
 
 export function ReportContent({
   report,
@@ -45,9 +46,9 @@ export function ReportContent({
       <div className="space-y-4 bg-white p-1">
         <div className={`p-4 ${cardClass}`}>
           <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-            <SummaryField label="Destination" value={destinationName ?? "All Destinations"} />
+            <SummaryField label="Origin" value={destinationName ?? "All Origins"} />
             <SummaryField label="Beach" value={beachName ?? "All Beaches"} />
-            <SummaryField label="Ranger" value={rangerName ?? "All Rangers"} />
+            <SummaryField label="Division" value={rangerName ?? "All Divisions"} />
             <SummaryField label="Date Range" value={dateFrom || dateTo ? `${dateFrom || "…"} to ${dateTo || "…"}` : "All Dates"} />
           </dl>
         </div>
@@ -59,18 +60,17 @@ export function ReportContent({
             that was never individually sorted/counted, scaled up per each drive&rsquo;s own recorded sample rate.
           </p>
           <dl className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-            <SummaryField
-              label="Recorded"
-              value={`${report.grand_total} Nos. (${report.weight_grand_total.toFixed(2)} kg)`}
-            />
+            <SummaryField label="Recorded" value={`${report.weight_grand_total.toFixed(2)} kg`} />
             <SummaryField
               label="Estimated Remaining (~90%)"
-              value={`${report.remaining_grand_total} Nos. (${report.remaining_weight_grand_total.toFixed(2)} kg)`}
+              value={`${report.remaining_weight_grand_total.toFixed(2)} kg`}
             />
             <SummaryField label="No. of Bags" value={String(report.total_bags)} />
             <SummaryField label="Overall Weight" value={`${report.total_weight_kg.toFixed(2)} kg`} />
           </dl>
         </div>
+
+        <DriveWiseSection activities={report.activities} />
 
         <div>
           <h2 className="mb-2 text-sm font-semibold text-zinc-900">As Recorded — 10% Sample</h2>
