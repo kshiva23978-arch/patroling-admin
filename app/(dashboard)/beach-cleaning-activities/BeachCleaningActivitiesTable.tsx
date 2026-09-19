@@ -20,8 +20,8 @@ export function BeachCleaningActivitiesTable({
       render: (a) => <span className="font-medium text-zinc-900">{a.activity_name}</span>,
     },
     {
-      header: "Ranger",
-      render: (a) => a.officer?.name || a.officer?.employee_id || <span className="text-zinc-400">—</span>,
+      header: "Beach Officer",
+      render: (a) => a.beach?.officer_name || <span className="text-zinc-400">—</span>,
     },
     {
       header: "Destination",

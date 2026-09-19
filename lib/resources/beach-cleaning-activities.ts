@@ -10,6 +10,10 @@ export interface BeachCleaningRefShape {
   name: string;
 }
 
+export interface BeachCleaningBeachRef extends BeachCleaningRefShape {
+  officer_name: string | null;
+}
+
 export interface BeachCleaningOfficerRef {
   id: string;
   employee_id: string;
@@ -61,7 +65,7 @@ export interface BeachCleaningActivity {
   officer_name: string | null;
   status: BeachCleaningStatus;
   destination: BeachCleaningRefShape | null;
-  beach: BeachCleaningRefShape | null;
+  beach: BeachCleaningBeachRef | null;
   location: BeachCleaningLocation;
   /** The ranger who created the drive — resource key is "officer", not "created_by". */
   officer: BeachCleaningOfficerRef | null;
