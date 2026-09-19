@@ -70,7 +70,7 @@ export function ReportContent({
           </dl>
         </div>
 
-        <DriveWiseSection activities={report.activities} />
+        <DriveWiseSection activities={report.activities} countries={report.countries} categories={report.categories} />
 
         <div>
           <h2 className="mb-2 text-sm font-semibold text-zinc-900">As Recorded — 10% Sample</h2>
