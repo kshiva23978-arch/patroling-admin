@@ -93,20 +93,22 @@ export function ReportContent({
           </div>
         )}
 
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-zinc-900">Estimated Remaining — 90%</h2>
-          <ReportTable
-            countries={report.countries}
-            categories={report.categories}
-            matrix={report.remaining_matrix}
-            categoryTotals={report.remaining_category_totals}
-            grandTotal={report.remaining_grand_total}
-            weightMatrix={report.remaining_weight_matrix}
-            weightCategoryTotals={report.remaining_weight_category_totals}
-            weightGrandTotal={report.remaining_weight_grand_total}
-            activityCount={report.activity_count}
-          />
-        </div>
+        {!singleDrive && (
+          <div>
+            <h2 className="mb-2 text-sm font-semibold text-zinc-900">Estimated Remaining — 90%</h2>
+            <ReportTable
+              countries={report.countries}
+              categories={report.categories}
+              matrix={report.remaining_matrix}
+              categoryTotals={report.remaining_category_totals}
+              grandTotal={report.remaining_grand_total}
+              weightMatrix={report.remaining_weight_matrix}
+              weightCategoryTotals={report.remaining_weight_category_totals}
+              weightGrandTotal={report.remaining_weight_grand_total}
+              activityCount={report.activity_count}
+            />
+          </div>
+        )}
 
         <ReportCharts ref={chartsRef} report={report} />
       </div>
