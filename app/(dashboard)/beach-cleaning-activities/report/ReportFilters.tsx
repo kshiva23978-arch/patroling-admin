@@ -77,7 +77,7 @@ export function ReportFilters({
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div className="space-y-1">
-        <label className={labelClass}>Destination</label>
+        <label className={labelClass}>Origin</label>
         <MultiSelect
           options={destinations.map((d) => ({ value: d.id, label: d.name }))}
           selected={destinationIds}
@@ -109,7 +109,7 @@ export function ReportFilters({
       </div>
 
       <div className="space-y-1">
-        <label className={labelClass}>Ranger</label>
+        <label className={labelClass}>Division</label>
         <select value={rangerId} onChange={(e) => setRangerId(e.target.value)} className={`${inputClass} w-auto`}>
           <option value="">All Rangers</option>
           {rangers.map((r) => (
