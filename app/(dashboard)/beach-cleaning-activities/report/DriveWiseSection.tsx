@@ -140,11 +140,21 @@ function DriveSegregationTable({
     matrix[countryName][categoryName] += segregation.weight_kg ?? 0;
   }
 
-  const categoryTotals = Object.fromEntries(categories.map((c) => [c, 0])) as Record<string, number>;
-  for (const country of countries) {
-    for (const category of categories) {
+  // Only this drive's own recorded rows/columns — the fixed 22x9 master
+  // grid would otherwise bury the handful this drive actually recorded
+  // under a wall of all-zero countries/categories.
+  const recordedCountries = countries.filter((country) => categories.some((c) => matrix[country][c] > 0));
+  const recordedCategories = categories.filter((category) => recordedCountries.some((c) => matrix[c][category] > 0));
+
+  const categoryTotals = Object.fromEntries(recordedCategories.map((c) => [c, 0])) as Record<string, number>;
+  for (const country of recordedCountries) {
+    for (const category of recordedCategories) {
       categoryTotals[category] += matrix[country][category];
     }
+  }
+
+  if (recordedCountries.length === 0) {
+    return <p className="text-xs text-zinc-400">No segregation data recorded for this drive.</p>;
   }
 
   return (
@@ -158,7 +168,7 @@ function DriveSegregationTable({
             <th rowSpan={2} className={headerCellClass + " min-w-[110px] text-left"}>
               Origin
             </th>
-            {categories.map((category) => (
+            {recordedCategories.map((category) => (
               <th key={category} className={categoryHeaderCellClass}>
                 {category}
               </th>
@@ -168,7 +178,7 @@ function DriveSegregationTable({
             </th>
           </tr>
           <tr className="bg-zinc-50">
-            {categories.map((category) => (
+            {recordedCategories.map((category) => (
               <th key={category} className={headerCellClass + " whitespace-nowrap font-normal text-zinc-500"}>
                 kg
               </th>
@@ -176,11 +186,11 @@ function DriveSegregationTable({
           </tr>
         </thead>
         <tbody>
-          {countries.map((country, index) => (
+          {recordedCountries.map((country, index) => (
             <tr key={country} className={index % 2 === 0 ? "bg-white" : "bg-zinc-50/50"}>
               <td className={cellClass + " text-center text-zinc-500"}>{index + 1}</td>
               <td className={cellClass + " text-zinc-900"}>{country}</td>
-              {categories.map((category) => (
+              {recordedCategories.map((category) => (
                 <td key={category} className={categoryCellClass + " text-right text-zinc-900"}>
                   {matrix[country][category].toFixed(2)} kg
                 </td>
@@ -191,7 +201,7 @@ function DriveSegregationTable({
           <tr className="bg-zinc-100 font-semibold text-zinc-900">
             <td className={cellClass}></td>
             <td className={cellClass}>TOTAL</td>
-            {categories.map((category) => (
+            {recordedCategories.map((category) => (
               <td key={category} className={categoryCellClass + " text-right"}>
                 {categoryTotals[category].toFixed(2)} kg
               </td>

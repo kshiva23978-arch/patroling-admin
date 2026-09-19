@@ -15,6 +15,7 @@ export function ReportContent({
   rangerName,
   dateFrom,
   dateTo,
+  singleDrive = false,
 }: {
   report: BeachCleaningReportData;
   destinationName?: string;
@@ -22,6 +23,8 @@ export function ReportContent({
   rangerName?: string;
   dateFrom?: string;
   dateTo?: string;
+  /** True on the per-drive report page — the drive-wise card below already shows this one drive's own 10% sample grid, so the generic "As Recorded" table would just repeat it. */
+  singleDrive?: boolean;
 }) {
   const filenameParts = ["waste-segregation-report", destinationName, beachName, rangerName].filter(Boolean);
   // Multi-selects join names with ", " — collapse anything non-alphanumeric to a dash.
@@ -72,21 +75,23 @@ export function ReportContent({
 
         <DriveWiseSection activities={report.activities} countries={report.countries} categories={report.categories} />
 
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-zinc-900">As Recorded — 10% Sample</h2>
-          <ReportTable
-            countries={report.countries}
-            categories={report.categories}
-            matrix={report.matrix}
-            categoryTotals={report.category_totals}
-            grandTotal={report.grand_total}
-            weightMatrix={report.weight_matrix}
-            weightCategoryTotals={report.weight_category_totals}
-            weightGrandTotal={report.weight_grand_total}
-            totalBags={report.total_bags}
-            activityCount={report.activity_count}
-          />
-        </div>
+        {!singleDrive && (
+          <div>
+            <h2 className="mb-2 text-sm font-semibold text-zinc-900">As Recorded — 10% Sample</h2>
+            <ReportTable
+              countries={report.countries}
+              categories={report.categories}
+              matrix={report.matrix}
+              categoryTotals={report.category_totals}
+              grandTotal={report.grand_total}
+              weightMatrix={report.weight_matrix}
+              weightCategoryTotals={report.weight_category_totals}
+              weightGrandTotal={report.weight_grand_total}
+              totalBags={report.total_bags}
+              activityCount={report.activity_count}
+            />
+          </div>
+        )}
 
         <div>
           <h2 className="mb-2 text-sm font-semibold text-zinc-900">Estimated Remaining — 90%</h2>

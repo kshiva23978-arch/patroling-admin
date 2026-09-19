@@ -39,6 +39,7 @@ export default async function BeachCleaningActivityReportPage({ params }: { para
         rangerName={rangerName}
         dateFrom={activityDate}
         dateTo={activityDate}
+        singleDrive
       />
     </div>
   );
