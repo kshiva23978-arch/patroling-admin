@@ -106,9 +106,10 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
 
 /**
  * Same fixed origin x category grid shape as the main report's `ReportTable`
- * (every country row, every category column, "No. of Bags" at the end), but
- * scoped to just this one drive's own `segregations` and kg-only per cell —
- * this per-drive view has no separate "Nos." line, unlike the aggregate table.
+ * (every country row, every category column), but scoped to just this one
+ * drive's own `segregations`, kg-only per cell, and a row-wise kg total in
+ * place of the aggregate table's "No. of Bags" column — bags aren't recorded
+ * per origin, so a per-row total is the more meaningful number here.
  */
 function DriveSegregationTable({
   activity,
@@ -129,6 +130,9 @@ function DriveSegregationTable({
     return <p className="text-xs text-zinc-400">No segregation data recorded for this drive.</p>;
   }
 
+  const rowTotal = (country: string) => recordedCategories.reduce((sum, category) => sum + matrix[country][category], 0);
+  const grandTotal = recordedCategories.reduce((sum, category) => sum + categoryTotals[category], 0);
+
   return (
     <div className="overflow-x-auto rounded-lg border border-zinc-200">
       <table className="min-w-full border-collapse text-xs">
@@ -146,7 +150,7 @@ function DriveSegregationTable({
               </th>
             ))}
             <th rowSpan={2} className={headerCellClass + " min-w-[80px]"}>
-              No. of Bags
+              Total
             </th>
           </tr>
           <tr className="bg-zinc-50">
@@ -167,7 +171,7 @@ function DriveSegregationTable({
                   {matrix[country][category].toFixed(2)} kg
                 </td>
               ))}
-              <td className={cellClass + " text-right text-zinc-400"}>0</td>
+              <td className={cellClass + " text-right font-medium text-zinc-900"}>{rowTotal(country).toFixed(2)} kg</td>
             </tr>
           ))}
           <tr className="bg-zinc-100 font-semibold text-zinc-900">
@@ -178,7 +182,7 @@ function DriveSegregationTable({
                 {categoryTotals[category].toFixed(2)} kg
               </td>
             ))}
-            <td className={cellClass + " text-right"}>{activity.bags_collected ?? 0}</td>
+            <td className={cellClass + " text-right"}>{grandTotal.toFixed(2)} kg</td>
           </tr>
         </tbody>
       </table>

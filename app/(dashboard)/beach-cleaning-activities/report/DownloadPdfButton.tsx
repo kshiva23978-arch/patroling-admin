@@ -325,7 +325,6 @@ async function addDriveSection(
         categories: grid.recordedCategories,
         matrix: grid.matrix,
         categoryTotals: grid.categoryTotals,
-        totalBags: activity.bags_collected ?? 0,
       }) + 6;
   }
 
@@ -350,7 +349,13 @@ async function addDriveSection(
   }
 }
 
-/** Kg-only counterpart of `addReportTable` — one line per cell instead of "Nos. / kg", scoped to just the rows/columns a single drive actually recorded. */
+/**
+ * Kg-only counterpart of `addReportTable` — one line per cell instead of
+ * "Nos. / kg", scoped to just the rows/columns a single drive actually
+ * recorded, and a row-wise kg total in place of the aggregate table's
+ * "No. of Bags" column — bags aren't recorded per origin, so a per-row
+ * total is the more meaningful number here.
+ */
 function addKgOnlyTable(
   doc: JsPdfDoc,
   autoTable: AutoTableFn,
@@ -363,7 +368,6 @@ function addKgOnlyTable(
     categories,
     matrix,
     categoryTotals,
-    totalBags,
   }: {
     title: string;
     startY: number;
@@ -373,34 +377,37 @@ function addKgOnlyTable(
     categories: string[];
     matrix: Record<string, Record<string, number>>;
     categoryTotals: Record<string, number>;
-    totalBags: number;
   },
 ): number {
   doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   doc.text(title, marginX, startY);
 
-  const head = [["Sl.\nNo", "Origin", ...categories, "No. of\nBags"]];
+  const rowTotal = (country: string) =>
+    categories.reduce((sum, category) => sum + (matrix[country]?.[category] ?? 0), 0);
+  const grandTotal = categories.reduce((sum, category) => sum + (categoryTotals[category] ?? 0), 0);
+
+  const head = [["Sl.\nNo", "Origin", ...categories, "Total"]];
 
   const body = countries.map((country, index) => [
     String(index + 1),
     country,
     ...categories.map((category) => `${(matrix[country]?.[category] ?? 0).toFixed(2)} kg`),
-    "0",
+    `${rowTotal(country).toFixed(2)} kg`,
   ]);
 
   body.push([
     "",
     "TOTAL",
     ...categories.map((category) => `${(categoryTotals[category] ?? 0).toFixed(2)} kg`),
-    String(totalBags),
+    `${grandTotal.toFixed(2)} kg`,
   ]);
 
   const usableWidth = pageWidth - marginX * 2;
   const slNoWidth = 8;
   const countryWidth = 30;
-  const bagsWidth = 14;
-  const categoryWidth = (usableWidth - slNoWidth - countryWidth - bagsWidth) / categories.length;
+  const totalWidth = 18;
+  const categoryWidth = (usableWidth - slNoWidth - countryWidth - totalWidth) / categories.length;
 
   const columnStyles: Record<number, { cellWidth: number; halign?: "left" | "center" }> = {
     0: { cellWidth: slNoWidth, halign: "center" },
@@ -409,7 +416,7 @@ function addKgOnlyTable(
   categories.forEach((_, i) => {
     columnStyles[i + 2] = { cellWidth: categoryWidth, halign: "center" };
   });
-  columnStyles[categories.length + 2] = { cellWidth: bagsWidth, halign: "center" };
+  columnStyles[categories.length + 2] = { cellWidth: totalWidth, halign: "center" };
 
   autoTable(doc, {
     head,
