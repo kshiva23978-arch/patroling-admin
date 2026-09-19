@@ -298,7 +298,7 @@ async function addDriveSection(
       `${activity.bags_collected ?? 0} bags${
         activity.total_weight_kg !== null ? ` / ${activity.total_weight_kg.toFixed(1)} kg` : ""
       }`,
-      activity.beach?.officer_name || "—",
+      activity.officer_name || activity.beach?.officer_name || "—",
     ]],
     styles: { fontSize: 8, cellPadding: 2, lineColor: [220, 220, 220], lineWidth: 0.1 },
     headStyles: { fillColor: [244, 244, 245], textColor: [113, 113, 122], fontStyle: "bold", fontSize: 7 },

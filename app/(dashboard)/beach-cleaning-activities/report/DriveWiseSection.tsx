@@ -80,7 +80,7 @@ function DriveCard({
             activity.total_weight_kg !== null ? ` · ${activity.total_weight_kg.toFixed(1)} kg` : ""
           }`}
         />
-        <Field label="Beach Officer" value={activity.beach?.officer_name || "—"} />
+        <Field label="Beach Officer" value={activity.officer_name || activity.beach?.officer_name || "—"} />
       </dl>
 
       <p className="text-xs font-medium text-zinc-500">Segregation — 10% Sample Collection</p>
