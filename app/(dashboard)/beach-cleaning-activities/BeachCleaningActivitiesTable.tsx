@@ -21,7 +21,7 @@ export function BeachCleaningActivitiesTable({
     },
     {
       header: "Beach Officer",
-      render: (a) => a.beach?.officer_name || <span className="text-zinc-400">—</span>,
+      render: (a) => a.officer_name || a.beach?.officer_name || <span className="text-zinc-400">—</span>,
     },
     {
       header: "Destination",
