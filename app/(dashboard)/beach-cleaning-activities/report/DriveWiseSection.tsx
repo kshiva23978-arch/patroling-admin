@@ -71,10 +71,13 @@ function DriveCard({ activity }: { activity: BeachCleaningActivity }) {
         <Field label="Beach Officer" value={activity.beach?.officer_name || "—"} />
       </dl>
 
-      <div className="grid gap-3 lg:grid-cols-3">
-        <MiniTable title="Waste By Category" rows={activity.report?.by_category ?? []} unit="No.s" />
+      <p className="text-xs font-medium text-zinc-500">Segregation — 10% Sample Collection</p>
+      <div className="grid gap-3 lg:grid-cols-2">
+        <CategoryTable
+          rows={activity.report?.by_category ?? []}
+          weightRows={activity.report?.by_category_weight ?? []}
+        />
         <MiniTable title="Origin-Wise Collection" rows={activity.report?.by_country ?? []} unit="No.s" />
-        <MiniTable title="Category-Wise Weight" rows={activity.report?.by_category_weight ?? []} unit="kg" />
       </div>
 
       <div className="space-y-3">
@@ -96,6 +99,50 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
     <div>
       <dt className="text-xs font-medium uppercase tracking-wide text-zinc-400">{label}</dt>
       <dd className="mt-0.5 text-zinc-900">{value}</dd>
+    </div>
+  );
+}
+
+/** "Waste By Category" and "Category-Wise Weight" share the same category rows — merged into one Category | No.s | Weight table instead of two side by side. */
+function CategoryTable({ rows, weightRows }: { rows: BeachCleaningReportRow[]; weightRows: BeachCleaningReportRow[] }) {
+  const weightByName = new Map(weightRows.map((r) => [r.name, r.quantity_kg]));
+  const totalNos = rows.reduce((sum, r) => sum + r.quantity_kg, 0);
+  const totalWeight = weightRows.reduce((sum, r) => sum + r.quantity_kg, 0);
+
+  return (
+    <div className="space-y-2 rounded-md border border-zinc-200 p-3">
+      <h4 className="text-xs font-semibold text-zinc-900">Waste By Category</h4>
+      {rows.length === 0 ? (
+        <p className="text-xs text-zinc-400">No data recorded.</p>
+      ) : (
+        <table className="min-w-full divide-y divide-zinc-100 text-xs">
+          <thead>
+            <tr>
+              <th className="py-1 pr-3 text-left font-medium text-zinc-500">Category</th>
+              <th className="py-1 pr-3 text-right font-medium text-zinc-500">No.s</th>
+              <th className="py-1 text-right font-medium text-zinc-500">Weight (kg)</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-100">
+            {rows.map((row) => (
+              <tr key={row.name}>
+                <td className="py-1 pr-3 text-zinc-700">{row.name}</td>
+                <td className="py-1 pr-3 text-right font-medium text-zinc-900">{row.quantity_kg} No.s</td>
+                <td className="py-1 text-right font-medium text-zinc-900">
+                  {(weightByName.get(row.name) ?? 0).toFixed(1)} kg
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t border-zinc-200">
+              <td className="py-1 pr-3 text-right font-semibold text-zinc-900">Total</td>
+              <td className="py-1 pr-3 text-right font-semibold text-zinc-900">{totalNos} No.s</td>
+              <td className="py-1 text-right font-semibold text-zinc-900">{totalWeight.toFixed(1)} kg</td>
+            </tr>
+          </tfoot>
+        </table>
+      )}
     </div>
   );
 }
