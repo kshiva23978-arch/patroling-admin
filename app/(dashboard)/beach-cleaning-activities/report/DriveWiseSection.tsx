@@ -1,15 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type {
-  BeachCleaningActivity,
-  BeachCleaningMediaRef,
-  BeachCleaningOfficerRef,
-} from "@/lib/resources/beach-cleaning-activities";
+import type { BeachCleaningActivity, BeachCleaningMediaRef } from "@/lib/resources/beach-cleaning-activities";
 import { cardClass, badgeClass } from "@/lib/ui-classes";
 import { PhotoGrid } from "@/components/media/PhotoLightbox";
-
-const MEDIA_BASE_URL = "/api/beach-cleaning-media";
+import { buildDriveSegregationGrid, officerLabel, MEDIA_BASE_URL } from "./driveSegregation";
 
 /** One card per matching drive, in the same shape as the drive detail page — division, date, participants, collected totals, per-drive segregation grid, the beach's assigned officer, then photos. */
 export function DriveWiseSection({
@@ -100,11 +95,6 @@ function DriveCard({
   );
 }
 
-function officerLabel(officer: BeachCleaningOfficerRef | null): string {
-  if (!officer) return "—";
-  return officer.name ? `${officer.name} (${officer.employee_id})` : officer.employee_id;
-}
-
 function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>
@@ -129,29 +119,11 @@ function DriveSegregationTable({
   countries: string[];
   categories: string[];
 }) {
-  const matrix: Record<string, Record<string, number>> = {};
-  for (const country of countries) {
-    matrix[country] = Object.fromEntries(categories.map((c) => [c, 0]));
-  }
-  for (const segregation of activity.segregations) {
-    const countryName = segregation.country?.name;
-    const categoryName = segregation.waste_category?.name;
-    if (!countryName || !categoryName || !matrix[countryName] || !(categoryName in matrix[countryName])) continue;
-    matrix[countryName][categoryName] += segregation.weight_kg ?? 0;
-  }
-
-  // Only this drive's own recorded rows/columns — the fixed 22x9 master
-  // grid would otherwise bury the handful this drive actually recorded
-  // under a wall of all-zero countries/categories.
-  const recordedCountries = countries.filter((country) => categories.some((c) => matrix[country][c] > 0));
-  const recordedCategories = categories.filter((category) => recordedCountries.some((c) => matrix[c][category] > 0));
-
-  const categoryTotals = Object.fromEntries(recordedCategories.map((c) => [c, 0])) as Record<string, number>;
-  for (const country of recordedCountries) {
-    for (const category of recordedCategories) {
-      categoryTotals[category] += matrix[country][category];
-    }
-  }
+  const { recordedCountries, recordedCategories, matrix, categoryTotals } = buildDriveSegregationGrid(
+    activity,
+    countries,
+    categories,
+  );
 
   if (recordedCountries.length === 0) {
     return <p className="text-xs text-zinc-400">No segregation data recorded for this drive.</p>;

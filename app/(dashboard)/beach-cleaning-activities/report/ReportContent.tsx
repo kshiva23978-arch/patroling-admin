@@ -43,6 +43,7 @@ export function ReportContent({
           dateTo={dateTo}
           filename={filename}
           getChartImages={() => chartsRef.current?.getChartImages() ?? []}
+          singleDrive={singleDrive}
         />
       </div>
 
