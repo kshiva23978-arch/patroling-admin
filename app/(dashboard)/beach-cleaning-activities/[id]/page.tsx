@@ -3,13 +3,21 @@ import Link from "next/link";
 import { PhotoGrid } from "@/components/media/PhotoLightbox";
 import { getBeachCleaningActivity } from "@/lib/resources/beach-cleaning-activities";
 import type { BeachCleaningReportRow } from "@/lib/resources/beach-cleaning-activities";
+import { listAllCountries } from "@/lib/resources/countries";
+import { listAllWasteCategories } from "@/lib/resources/waste-categories";
 import { cardClass, badgeClass, linkButtonClass } from "@/lib/ui-classes";
+import { DriveDetailsEditor } from "./DriveDetailsEditor";
+import { SegregationManager } from "./SegregationManager";
 
 const MEDIA_BASE_URL = "/api/beach-cleaning-media";
 
 export default async function BeachCleaningActivityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const activity = await getBeachCleaningActivity(id).catch(() => null);
+  const [activity, countries, wasteCategories] = await Promise.all([
+    getBeachCleaningActivity(id).catch(() => null),
+    listAllCountries(),
+    listAllWasteCategories(),
+  ]);
   if (!activity) notFound();
 
   const beforePhotos = activity.media.filter((m) => m.kind === "before");
@@ -72,6 +80,9 @@ export default async function BeachCleaningActivityDetailPage({ params }: { para
             {activity.location.latitude.toFixed(5)}, {activity.location.longitude.toFixed(5)}
           </p>
         )}
+        <div className="mt-3">
+          <DriveDetailsEditor activity={activity} />
+        </div>
       </Section>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -79,6 +90,13 @@ export default async function BeachCleaningActivityDetailPage({ params }: { para
         <ReportTable title="Origin-Wise Collection" rows={activity.report?.by_country ?? []} unit="No.s" />
         <ReportTable title="Category-Wise Weight" rows={activity.report?.by_category_weight ?? []} unit="kg" />
       </div>
+
+      <SegregationManager
+        activityId={id}
+        segregations={activity.segregations}
+        countries={countries.map((c) => ({ id: c.id, name: c.country_name }))}
+        wasteCategories={wasteCategories.map((c) => ({ id: c.id, name: c.name }))}
+      />
 
       <Section title={`Before Photos (${beforePhotos.length})`}>
         <PhotoGrid items={beforePhotos} baseUrl={MEDIA_BASE_URL} emptyMessage="No before photo captured." />

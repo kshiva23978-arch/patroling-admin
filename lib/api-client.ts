@@ -1,6 +1,12 @@
 import "server-only";
 
+import { Agent, setGlobalDispatcher } from "undici";
 import { getSessionToken } from "./session";
+
+// Node's fetch defaults to a 10s connect timeout, which is too tight for the
+// backend's network (gsmchatham.andamannicobar.gov.in can be slow to accept
+// connections). Raise it globally so every server-side fetch benefits.
+setGlobalDispatcher(new Agent({ connect: { timeout: 30_000 } }));
 
 export interface Envelope<T> {
   success: boolean;
@@ -48,6 +54,12 @@ function backendUrl(path: string): string {
   return `${base.replace(/\/$/, "")}${path}`;
 }
 
+// Node's fetch (undici) has no overall request timeout of its own — a slow
+// or half-open backend connection can otherwise hang a Server Component
+// render indefinitely. 120s gives the backend's slower endpoints (and the
+// raised 30s connect timeout above) enough room without hanging forever.
+const REQUEST_TIMEOUT_MS = 120_000;
+
 async function parseJson(res: Response): Promise<unknown> {
   const text = await res.text();
   if (!text) return null;
@@ -81,6 +93,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<Enve
     ...options,
     headers,
     cache: "no-store",
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 
   const json = await parseJson(res);
@@ -157,6 +170,7 @@ export async function fetchRawUser<T>(): Promise<T | null> {
   const res = await fetch(backendUrl("/user"), {
     headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
     cache: "no-store",
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 
   if (!res.ok) {

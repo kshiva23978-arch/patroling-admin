@@ -1,6 +1,7 @@
 import "server-only";
 
 import { apiFetch, apiFetchPaginated, type Paginated } from "@/lib/api-client";
+import type { BeachCleaningDetailsInput, BeachCleaningSegregationInput } from "@/lib/schemas/beach-cleaning-activities";
 
 export type BeachCleaningStatus = "in_progress" | "submitted";
 
@@ -350,4 +351,60 @@ export function listBeachCleaningRangers(): Promise<BeachCleaningRangerOption[]>
  */
 export function deleteBeachCleaningActivity(id: string): Promise<void> {
   return apiFetch<void>(`/admin/beach-cleaning-activities/${id}`, { method: "DELETE" });
+}
+
+/**
+ * Admin-only correction to the drive's officer name / total weight — see
+ * backend `AdminBeachCleaningActivityUpdateController::update`. Unlike the
+ * app's own `updateDetails`/`updateCollection`, this works whether the drive
+ * is still in progress or already submitted.
+ */
+export async function updateBeachCleaningActivity(
+  id: string,
+  input: BeachCleaningDetailsInput,
+): Promise<BeachCleaningActivity> {
+  const activity = await apiFetch<BeachCleaningActivity>(`/admin/beach-cleaning-activities/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ officer_name: input.officerName, total_weight_kg: input.totalWeightKg }),
+  });
+  return normalizeActivity(activity);
+}
+
+function segregationPayload(input: BeachCleaningSegregationInput) {
+  return {
+    country_id: input.countryId,
+    waste_category_id: input.wasteCategoryId,
+    quantity_kg: input.quantityKg,
+    weight_kg: input.weightKg,
+  };
+}
+
+export async function addBeachCleaningSegregation(
+  activityId: string,
+  input: BeachCleaningSegregationInput,
+): Promise<BeachCleaningActivity> {
+  const activity = await apiFetch<BeachCleaningActivity>(
+    `/admin/beach-cleaning-activities/${activityId}/segregations`,
+    { method: "POST", body: JSON.stringify(segregationPayload(input)) },
+  );
+  return normalizeActivity(activity);
+}
+
+/** Edits an existing collection row in place — the app itself never offers this, only add/remove. */
+export async function updateBeachCleaningSegregation(
+  activityId: string,
+  segregationId: string,
+  input: BeachCleaningSegregationInput,
+): Promise<BeachCleaningActivity> {
+  const activity = await apiFetch<BeachCleaningActivity>(
+    `/admin/beach-cleaning-activities/${activityId}/segregations/${segregationId}`,
+    { method: "PATCH", body: JSON.stringify(segregationPayload(input)) },
+  );
+  return normalizeActivity(activity);
+}
+
+export async function removeBeachCleaningSegregation(activityId: string, segregationId: string): Promise<void> {
+  await apiFetch<void>(`/admin/beach-cleaning-activities/${activityId}/segregations/${segregationId}`, {
+    method: "DELETE",
+  });
 }
